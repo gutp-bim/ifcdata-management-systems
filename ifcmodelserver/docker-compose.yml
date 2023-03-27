@@ -1,0 +1,33 @@
+version: '3.3'
+
+services:
+  db:
+    container_name: ifcmodelserver_db_container
+    image: arangodb:latest
+    restart: always
+    ports:
+      - 8529:8529
+    environment:
+      ARANGO_DB_NAME: ifc
+      ARANGO_DB_USER: root
+      ARANGO_ROOT_PASSWORD: root
+    networks:
+      - ifcmodelserver_network
+  app:
+    container_name: ifcmodelserver_container
+    build: .
+    tty: true
+    stdin_open: true
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    networks:
+      - ifcmodelserver_network
+networks:
+  ifcmodelserver_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.20.0/24

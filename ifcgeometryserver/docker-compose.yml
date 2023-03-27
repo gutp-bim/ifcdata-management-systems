@@ -1,0 +1,33 @@
+version: '3.3'
+
+services:
+  app:
+    container_name: ifcgeometryserver_container
+    build: .
+    tty: true
+    stdin_open: true
+    ports:
+      - 8000:8000
+    networks:
+      - ifcgeometryserver_network
+  db:
+    container_name: postgres_container
+    image: mdillon/postgis
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./initdb.d:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432
+    networks:
+      - ifcgeometryserver_network
+networks:
+  ifcgeometryserver_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.10.0/24
+

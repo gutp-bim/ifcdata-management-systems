@@ -1,0 +1,164 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "IFC幾何形状データ管理サービスのプロトタイプ",
+    "version": "1.0.0",
+    "title": "IfcGeometryDataServer"
+  },
+  "host": "localhost:8000",
+  "basePath": "/v1",
+  "tags": [
+    {
+      "name": "ifcgeometry",
+      "description": "IFCの幾何形状へのアクセス"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/ifcgeometry/upload": {
+      "post": {
+        "tags": [
+          "ifcgeometry"
+        ],
+        "summary": "IFCモデルアップロードAPI",
+        "description": "STEPファイルによるIFCモデルのアップロードを行う",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "in": "formData",
+            "name": "upfile",
+            "description": "アップロードするSTEPファイル",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "in": "formData",
+            "name": "ifcmodel_id",
+            "description": "モデルサーバ上での該当モデルのID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "type": "string",
+                  "format": "string"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/ifcgeometry/{ifcmodel_id}": {
+      "get": {
+        "tags": [
+          "ifcgeometry"
+        ],
+        "description": "IFCのモデルIDでインスタンスの検索を行う",
+        "parameters": [
+          {
+            "name": "ifcmodel_id",
+            "in": "path",
+            "description": "取得したいIFCのモデルID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "class",
+            "in": "query",
+            "description": "取得したいIFCのクラス名",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "$ref": "#/definitions/IfcGeometry"
+            }
+          }
+        }
+      }
+    },
+    "/ifcgeometry/{ifcmodel_id}/{globally_unique_id}": {
+      "get": {
+        "tags": [
+          "ifcgeometry"
+        ],
+        "description": "IFCのモデルIDとGUIDで特定のインスタンスの検索を行う",
+        "parameters": [
+          {
+            "name": "ifcmodel_id",
+            "in": "path",
+            "description": "取得したいIFCのモデルID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "globally_unique_id",
+            "in": "path",
+            "description": "取得したいIFCのGUID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "$ref": "#/definitions/IfcGeometry"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "IfcGeometry": {
+      "type": "object",
+      "properties": {
+        "ifcmodel_id": {
+          "type": "string"
+        },
+        "globally_unique_id": {
+          "type": "string"
+        },
+        "class_name": {
+          "type": "string"
+        },
+        "vertices": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "indices": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "face_color": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}

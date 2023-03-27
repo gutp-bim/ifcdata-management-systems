@@ -1,0 +1,463 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "IFCモデルサーバーのプロトタイプ",
+    "version": "1.0.0",
+    "title": "IfcModelManagementService"
+  },
+  "host": "localhost:8080",
+  "basePath": "/v1",
+  "tags": [
+    {
+      "name": "ifcmodel",
+      "description": "IFCモデルへのアクセス"
+    },
+    {
+      "name": "ifcinstance",
+      "description": "IFCインスタンスへのアクセス"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/ifcmodel": {
+      "post": {
+        "tags": [
+          "ifcmodel"
+        ],
+        "summary": "IFCモデルアップロードAPI",
+        "description": "STEPファイルによるIFCモデルのアップロードを行う",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "in": "formData",
+            "name": "upfile",
+            "description": "アップロードするSTEPファイル",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "in": "formData",
+            "name": "modelname",
+            "description": "IFCモデル名",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "formData",
+            "name": "description",
+            "description": "アップロードするIFCモデルに関する記述",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "type": "string",
+                  "format": "string"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/ifcmodel/{ifcmodelid}": {
+      "get": {
+        "tags": [
+          "ifcmodel"
+        ],
+        "summary": "IFCモデル情報API",
+        "description": "IFCモデルの情報をIDを用いて取得する",
+        "operationId": "findById",
+        "parameters": [
+          {
+            "name": "ifcmodelid",
+            "in": "path",
+            "description": "取得したいモデルのID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "$ref": "#/definitions/IFCModel"
+            }
+          }
+        }
+      }
+    },
+    "/ifcmodels": {
+      "get": {
+        "tags": [
+          "ifcmodel"
+        ],
+        "summary": "IFCモデル情報API",
+        "description": "既にアップロードされた全IFCモデルに関する情報を取得する",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/IFCModel"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ifcinstances/{ifcmodelid}": {
+      "get": {
+        "tags": [
+          "ifcinstance"
+        ],
+        "summary": "IFCインスタンス取得API",
+        "description": "特定のIFCモデルに属するインスタンスをモデルのIDから取得する",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "ifcmodelid",
+            "in": "path",
+            "description": "取得したいモデルのID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "$ref": "#/definitions/IFCInstance"
+            }
+          }
+        }
+      }
+    },
+    "/ifcinstances/{ifcmodelid}/{ifcclassname}": {
+      "get": {
+        "tags": [
+          "ifcinstance"
+        ],
+        "summary": "IFCインスタンス取得API",
+        "description": "特定のIFCモデルに属する特定クラスのIFCインスタンスをモデルのIDとクラス名から取得するAPI",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "ifcmodelid",
+            "in": "path",
+            "description": "取得したいモデルのID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ifcclassname",
+            "in": "path",
+            "description": "取得したいインスタンス群のクラス名",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "$ref": "#/definitions/IFCInstance"
+            }
+          }
+        }
+      }
+    },
+    "/ifcinstance/{ifcmodelid}/{guid}": {
+      "get": {
+        "tags": [
+          "ifcinstance"
+        ],
+        "summary": "GUIDによるIFCインスタンスの取得API",
+        "description": "特定のIFCモデルに属するIFCインスタンスをGUIDから取得するAPI",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "ifcmodelid",
+            "in": "path",
+            "description": "取得したいインスタンスのモデルID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "guid",
+            "in": "path",
+            "description": "取得したいインスタンスのGUID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "$ref": "#/definitions/IFCInstance"
+            }
+          }
+        }
+      }
+    },
+    "/ifcinstance/{ifcinstanceid}": {
+      "get": {
+        "tags": [
+          "ifcinstance"
+        ],
+        "summary": "IFCインスタンス取得API",
+        "description": "特定のインスタンスをインスタンスのIDから取得する",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "ifcinstanceid",
+            "in": "path",
+            "description": "取得したいインスタンスのID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "$ref": "#/definitions/IFCInstance"
+            }
+          }
+        }
+      }
+    },
+    "/inverseinstance/{ifcinstanceid}/{ifcinversename}": {
+      "get": {
+        "tags": [
+          "ifcinstance"
+        ],
+        "summary": "IFCインスタンスの逆参照取得API",
+        "description": "特定のIFCモデルに属する特定クラスのIFCインスタンスをモデルのIDとクラス名から取得するAPI",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "ifcinstanceid",
+            "in": "path",
+            "description": "逆参照を取得したいインスタンスのID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ifcinversename",
+            "in": "path",
+            "description": "取得したいインスタンスの逆参照名",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "$ref": "#/definitions/IFCInstance"
+            }
+          }
+        }
+      }
+    },
+    "/bot/{ifcmodelid}": {
+      "get": {
+        "tags": [
+          "ifcinstance"
+        ],
+        "summary": "botに変換したメタデータ取得API",
+        "description": "モデルのIDからメタデータを取得する",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "ifcmodelid",
+            "in": "path",
+            "description": "メタデータをIDから取得する",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "IFCModel": {
+      "type": "object",
+      "properties": {
+        "ifcmodel_id": {
+          "type": "string"
+        },
+        "model_name": {
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "IFCInstance": {
+      "type": "object",
+      "properties": {
+        "ifcinstance_id": {
+          "type": "string"
+        },
+        "classname": {
+          "type": "string"
+        },
+        "values": {
+          "type": "array",
+          "description": "IFCのインスタンスの持つ属性値。IFCValueを継承したオブジェクトが要素に入っている",
+          "items": {
+            "$ref": "#/definitions/IFCValue"
+          }
+        }
+      }
+    },
+    "IFCValue": {
+      "type": "object",
+      "properties": {
+        "valuetype": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "IFCIntegerValue": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/IFCValue"
+        }
+      ],
+      "properties": {
+        "value": {
+          "type": "integer"
+        }
+      }
+    },
+    "IFCRealValue": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/IFCValue"
+        }
+      ],
+      "properties": {
+        "value": {
+          "type": "number"
+        }
+      }
+    },
+    "IFCStringValue": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/IFCValue"
+        }
+      ],
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "IFCEnumerationValue": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/IFCValue"
+        }
+      ],
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "IFCReferenceValue": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/IFCValue"
+        }
+      ],
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "IFCListValue": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/IFCValue"
+        }
+      ],
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/IFCValue"
+          }
+        }
+      }
+    },
+    "IFCOriginalTypeValue": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/IFCValue"
+        }
+      ],
+      "properties": {
+        "typename": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/IFCValue"
+        }
+      }
+    }
+  }
+}
