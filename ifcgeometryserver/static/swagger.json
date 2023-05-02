@@ -92,6 +92,29 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "ifcgeometry"
+        ],
+        "description": "IFCのモデルIDでモデルの削除を行う",
+        "parameters": [
+          {
+            "name": "ifcmodel_id",
+            "in": "path",
+            "description": "削除したいIFCのモデルID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "message": "string"
+            }
+          }
+        }
       }
     },
     "/ifcgeometry/{ifcmodel_id}/{globally_unique_id}": {

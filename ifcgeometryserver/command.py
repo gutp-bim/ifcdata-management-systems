@@ -14,6 +14,10 @@ class StoreIFCGeometryData(Command):
     ifc_model_id: str
     file_path: str
 
+@dataclasses.dataclass(frozen=True)
+class DeleteIFCGeometryData(Command):
+    ifc_model_id: str
+
 
 class CommandHandler(object):
 
@@ -40,4 +44,9 @@ def _(command, adopter, repository):
 
     repository.put(geometry_data_list)
 
+    return True
+
+@_when.register(DeleteIFCGeometryData)
+def _(command, adopter, repository):
+    repository.remove_by_ifcmodelid(command.ifc_model_id)
     return True

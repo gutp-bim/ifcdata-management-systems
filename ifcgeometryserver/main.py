@@ -3,7 +3,7 @@ from flask import *
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 import configparser
-from command import CommandHandler, StoreIFCGeometryData
+from command import CommandHandler, StoreIFCGeometryData, DeleteIFCGeometryData
 from query import (
     QueryHandler, GetGeometryDataByIFCModelId,
     GetGeometryDataByClassName, GetGeometryDataByGlobalId)
@@ -94,6 +94,18 @@ def upload_ifc_file():
 
     msg = {
         "message": "upload finished",
+    }
+
+    return jsonify(msg)
+
+@app.route("/v1/ifcgeometry/<ifcmodel_id>", methods=["DELETE"])
+def delete_ifcmodel(ifcmodel_id):
+    handler = CommandHandler(adopter, repository)
+    command = DeleteIFCGeometryData(ifcmodel_id)
+    handler.handle(command)
+
+    msg = {
+        "message": "delete finished"
     }
 
     return jsonify(msg)
