@@ -22,5 +22,6 @@ RUN pip3 install flask-swagger-ui
 RUN pip3 install python-arango
 RUN pip3 install inject
 RUN pip3 install rdflib
+RUN pip3 install joblib
 
 CMD ["python", "main.py"]

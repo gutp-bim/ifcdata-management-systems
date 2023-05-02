@@ -1,7 +1,9 @@
 from model import *
 from arango import ArangoClient
+from arango.job import AsyncJob
 import configparser
 import itertools
+import joblib
 
 
 class ArangoDBIFCModelRepository(IFCModelRepository):
@@ -101,7 +103,48 @@ class ArangoDBIFCModelRepository(IFCModelRepository):
 
 
     def remove_by_ifcmodelid(self, a_ifcmodel_id: IFCModelId):
-        pass
+
+        print("start remove")
+
+        def get_asyncjob_result(job: AsyncJob):
+            while True:
+                job_status = job.status()
+                if job_status != "pending":
+                    break
+            if job_status == "cancelled":
+                raise Exception(f"job {job.id} was cancelled")
+            return job.result()
+
+        try:
+            client = ArangoClient(hosts=self._hosts)
+            db = client.db(self._db_name, username=self._user, password=self._password)
+            async_db = db.begin_async_execution(return_result=True)
+            graph = async_db.graph(self._graph)
+            ifcmodel_collection = graph.vertex_collection(self._ifc_model)
+            ifcinstance_collection = graph.vertex_collection(self._ifc_instance)
+            belongs_collection = graph.edge_collection(self._belongs)
+            reference_collection = graph.edge_collection(self._reference)
+            inverse_collection = graph.edge_collection(self._inverse)
+
+            belongs_documents = get_asyncjob_result(belongs_collection.edges(self._ifc_model + "/" + a_ifcmodel_id))
+            instance_ids = [e["_to"].split("/")[1] for e in belongs_documents["edges"]]
+
+            nest_reference_documents = joblib.Parallel(n_jobs=-1, verbose=1)(joblib.delayed(get_asyncjob_result)(reference_collection.edges(self._ifc_instance + "/" + id)) for id in instance_ids)
+            reference_documents = list(set(list(itertools.chain.from_iterable(nest_reference_documents))))
+            nest_inverse_documents = joblib.Parallel(n_jobs=-1, verbose=1)(joblib.delayed(get_asyncjob_result)(inverse_collection.edges(self._ifc_instance + "/" + id)) for id in instance_ids)
+            inverse_documents = list(set(list(itertools.chain.from_iterable(nest_inverse_documents))))
+            
+            model_delete_result = get_asyncjob_result(ifcmodel_collection.delete(a_ifcmodel_id))
+            instance_delete_result = get_asyncjob_result(ifcinstance_collection.delete_many(instance_ids, silent=True))
+            belongs_delete_result = get_asyncjob_result(belongs_collection.delete_many(belongs_documents["edges"], silent=True))
+            reference_delete_result = get_asyncjob_result(reference_collection.delete_many(reference_documents, silent=True))
+            inverse_delete_result = get_asyncjob_result(inverse_collection.delete_many(inverse_documents, silent=True))
+
+        finally:
+            client.close()
+
+        return model_delete_result and instance_delete_result and belongs_delete_result and reference_delete_result and inverse_delete_result
+
 
 
 

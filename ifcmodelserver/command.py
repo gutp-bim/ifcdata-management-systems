@@ -18,6 +18,11 @@ class UploadIFCModelByStepFile(IFCModelCommand):
     modelname: str
     description: str
 
+@dataclasses.dataclass(frozen=True)
+class DeleteIFCModelByModelId(IFCModelCommand):
+
+    model_id: str
+
 
 #############################################################################
 # コマンドに応じた処理を行うハンドラークラス
@@ -47,3 +52,7 @@ def _(command, repository):
     adopter = IFCOpenshellIFCModelAdopter()
     ifc_model = adopter.generate_ifcmodel(command.modelname, command.description, command.file_path)
     return repository.put(ifc_model)
+
+@_when.register(DeleteIFCModelByModelId)
+def _(command, repository):
+    return repository.remove_by_ifcmodelid(command.model_id)
