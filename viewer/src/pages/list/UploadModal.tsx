@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import * as Reactstrap from "reactstrap"
 import Spinner from 'react-bootstrap/Spinner';
 
+import { ModalState } from './state';
 import { postToModelServer, postToGeometryServer } from 'apiServices/postIfcFile';
 
 const onClickSubmit = async (file: File | undefined, name: string, description: string, setIsUploading: React.Dispatch<React.SetStateAction<boolean>>) => {
@@ -24,15 +25,15 @@ const onClickSubmit = async (file: File | undefined, name: string, description: 
 }
 
 const UploadModal: React.FC<{
-    isOpen: boolean,
-    setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
+    modalState: ModalState,
+    setModalState: React.Dispatch<React.SetStateAction<ModalState>>
 }> = (props) => {
     const [file, setFile] = useState<File>()
     const [name, setName] = useState<string>("")
     const [description, setDescription] = useState<string>("")
     const [isUploading, setIsUploading] = useState<boolean>(false)
     return (
-        <Reactstrap.Modal isOpen={props.isOpen}>
+        <Reactstrap.Modal isOpen={props.modalState === 'Upload'}>
             <Reactstrap.ModalHeader> IFCファイル追加 </Reactstrap.ModalHeader>
             <Reactstrap.ModalBody>
                 <label>ifc file :   </label>
@@ -93,7 +94,7 @@ const UploadModal: React.FC<{
                 <Reactstrap.Button color='secondary' active onClick={() => {
                     setName("")
                     setDescription("")
-                    props.setIsOpen(false)
+                    props.setModalState('None')
                 }}>
                     キャンセル
                 </Reactstrap.Button>

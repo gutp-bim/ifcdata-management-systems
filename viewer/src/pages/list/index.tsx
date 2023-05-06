@@ -2,13 +2,16 @@ import { useState } from 'react'
 import * as Reactstrap from "reactstrap"
 import { Link } from "react-router-dom"
 
+import { ModalState } from './state'
 import UploadModal from './UploadModal'
+import DeleteModal from './DeleteModal'
 import { routes } from "main/routes"
 import { useGetModels } from 'apiServices/getModels'
 import { MetaDataModel } from 'innerDataModel/MetaDataModel';
 
 const View = () => {
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
+  const [modalState, setModalState] = useState<ModalState>('None')
+  const [targetIfcModelId, setTargetIfcModelId] = useState<string>('')
   const models: MetaDataModel[] = useGetModels()
   return (
     <div>
@@ -16,10 +19,11 @@ const View = () => {
         <Reactstrap.CardHeader>
           <div className="d-flex flex-row justify-content-between">
             <span>モデル選択</span>
-            <Reactstrap.Button color='success' active onClick={() => setIsModalOpen(true)}>
+            <Reactstrap.Button color='success' active onClick={() => setModalState('Upload')}>
               モデル追加
             </Reactstrap.Button>
-            <UploadModal isOpen={isModalOpen} setIsOpen={setIsModalOpen} />
+            <UploadModal modalState={modalState} setModalState={setModalState} />
+            <DeleteModal ifcModelId={targetIfcModelId} modalState={modalState} setModalState={setModalState} />
           </div>
         </Reactstrap.CardHeader>
         <Reactstrap.CardBody>
@@ -41,6 +45,17 @@ const View = () => {
                       </Link>
                     </td>
                     <td>{model.description}</td>
+                    <td>
+                      <Reactstrap.Button
+                        color='danger'
+                        active
+                        onClick={() => {
+                          setTargetIfcModelId(model.id)
+                          setModalState('Delete')
+                        }}>
+                        削除
+                      </Reactstrap.Button>
+                    </td>
                   </tr>
                 );
               })}
