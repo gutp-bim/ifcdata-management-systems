@@ -11,7 +11,7 @@ import { MetaDataModel } from 'innerDataModel/MetaDataModel';
 
 const View = () => {
   const [modalState, setModalState] = useState<ModalState>('None')
-  const [targetIfcModelId, setTargetIfcModelId] = useState<string>('')
+  const [targetIfc, setTargetIfc] = useState<[string, string]>(['', ''])
   const models: MetaDataModel[] = useGetModels()
   return (
     <div>
@@ -23,7 +23,7 @@ const View = () => {
               モデル追加
             </Reactstrap.Button>
             <UploadModal modalState={modalState} setModalState={setModalState} />
-            <DeleteModal ifcModelId={targetIfcModelId} modalState={modalState} setModalState={setModalState} />
+            <DeleteModal ifcModelId={targetIfc[0]} ifcModelName={targetIfc[1]} modalState={modalState} setModalState={setModalState} />
           </div>
         </Reactstrap.CardHeader>
         <Reactstrap.CardBody>
@@ -50,7 +50,7 @@ const View = () => {
                         color='danger'
                         active
                         onClick={() => {
-                          setTargetIfcModelId(model.id)
+                          setTargetIfc([model.id, model.name])
                           setModalState('Delete')
                         }}>
                         削除

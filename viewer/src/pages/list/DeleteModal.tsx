@@ -14,15 +14,15 @@ const onClickSubmit = async (modelId: string) => {
 
 const DeleteModal: React.FC<{
     ifcModelId: string,
+    ifcModelName: string,
     modalState: ModalState,
     setModalState: React.Dispatch<React.SetStateAction<ModalState>>
 }> = (props) => {
-    const [isUploading, setIsUploading] = useState<boolean>(false)
     return (
         <Reactstrap.Modal isOpen={props.modalState === 'Delete'}>
             <Reactstrap.ModalHeader> IFCファイル削除 </Reactstrap.ModalHeader>
             <Reactstrap.ModalBody>
-                {props.ifcModelId} を削除します。<br/>
+                {props.ifcModelName} を削除します。<br/>
                 この操作は取り消せません。よろしいですか？<br/>
                 なお、この操作が反映されるには30分ほどかかります。
             </Reactstrap.ModalBody>
