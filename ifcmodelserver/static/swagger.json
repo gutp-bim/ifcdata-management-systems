@@ -98,6 +98,30 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "ifcmodel"
+        ],
+        "summary": "IFCモデル削除API",
+        "description": "IFCモデルIDを用いてIFCモデルを削除する",
+        "parameters": [
+          {
+            "name": "ifcmodelid",
+            "in": "path",
+            "description": "削除するモデルのID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功時のレスポンス",
+            "schema": {
+              "message": "string"
+            }
+          }
+        }
       }
     },
     "/ifcmodels": {

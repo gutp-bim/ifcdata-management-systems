@@ -1,7 +1,10 @@
 from model import *
 from arango import ArangoClient
+from arango.job import AsyncJob
+from arango.cursor import Cursor
 import configparser
 import itertools
+import joblib
 
 
 class ArangoDBIFCModelRepository(IFCModelRepository):
@@ -35,7 +38,8 @@ class ArangoDBIFCModelRepository(IFCModelRepository):
         instance_dict_list = [{
             "_key": instance.instance_id.value,
             "class_name": instance.classname.value,
-            "attributes": [ attribute.to_dict() for attribute in instance.attributes]
+            "attributes": [ attribute.to_dict() for attribute in instance.attributes],
+            "ifc_model_id": a_ifcmodel.ifcmodel_id.value
             } for instance in instances]
 
         print("data convert")
@@ -53,6 +57,7 @@ class ArangoDBIFCModelRepository(IFCModelRepository):
 
             ifcinstance_collection = graph.vertex_collection(self._ifc_instance)
             instance_result = ifcinstance_collection.import_bulk(instance_dict_list)
+            ifcinstance_collection.add_hash_index(fields=["ifc_model_id"])
 
             print("create instance")
         finally:
@@ -68,7 +73,8 @@ class ArangoDBIFCModelRepository(IFCModelRepository):
             return [{
                 "_from": self._ifc_instance + "/" + e.instance_id.value,
                 "_to": self._ifc_instance + "/" + reference[1].value.value,
-                "attribute_name": reference[0].value
+                "attribute_name": reference[0].value,
+                "ifc_model_id": a_ifcmodel.ifcmodel_id.value
             } for reference in references]
 
         def create_inverse_dict(e: IFCInstance):
@@ -76,7 +82,8 @@ class ArangoDBIFCModelRepository(IFCModelRepository):
             nest_dict_list = [[{
                 "_from": self._ifc_instance + "/" + v.value,
                 "_to": self._ifc_instance + "/" + e.instance_id.value,
-                "inverse_name": inverse.inverse_name.value
+                "inverse_name": inverse.inverse_name.value,
+                "ifc_model_id": a_ifcmodel.ifcmodel_id.value
                 }   for v in inverse.value]for inverse in inverses]
             return list(itertools.chain.from_iterable(nest_dict_list))
         nest_inverse_dict_list = [ create_inverse_dict(instance) for instance in instances]
@@ -95,14 +102,67 @@ class ArangoDBIFCModelRepository(IFCModelRepository):
         belongs_collection.import_bulk(belongs_list)
         reference_collection.import_bulk(reference_dict_list)
         inverse_collection.import_bulk(inverse_dict_list)
-
+        reference_collection.add_hash_index(["ifc_model_id"])
+        inverse_collection.add_hash_index(["ifc_model_id"])
 
         return IFCModelId(model_result["_key"])
 
 
     def remove_by_ifcmodelid(self, a_ifcmodel_id: IFCModelId):
-        pass
 
+        print("start remove")
+
+        def get_asyncjob_result(job: AsyncJob):
+            while True:
+                job_status = job.status()
+                if job_status != "pending":
+                    break
+            if job_status == "cancelled":
+                raise Exception(f"job {job.id} was cancelled")
+            return job.result()
+        
+        def accumulate_cursor(cur: Cursor) -> list:
+            res = list(cur.batch())
+            has_more = cur.has_more()
+            while has_more:
+                info_dict = cur.fetch()
+                res.extend(list(info_dict["batch"]))
+                has_more = info_dict["has_more"]
+            return res
+
+
+
+        try:
+            client = ArangoClient(hosts=self._hosts)
+            db = client.db(self._db_name, username=self._user, password=self._password)
+            async_db = db.begin_async_execution(return_result=True)
+            graph = async_db.graph(self._graph)
+            ifcmodel_collection = graph.vertex_collection(self._ifc_model)
+            ifcinstance_collection = graph.vertex_collection(self._ifc_instance)
+            belongs_collection = graph.edge_collection(self._belongs)
+            reference_collection = graph.edge_collection(self._reference)
+            inverse_collection = graph.edge_collection(self._inverse)   
+
+            belongs_documents = accumulate_cursor(
+                get_asyncjob_result(belongs_collection.find({"_from": self._ifc_model + "/" + a_ifcmodel_id}))
+            )
+            reference_documents = accumulate_cursor(
+                get_asyncjob_result(reference_collection.find({"ifc_model_id": a_ifcmodel_id}))
+            )
+            inverse_documents = accumulate_cursor(
+                get_asyncjob_result(inverse_collection.find({"ifc_model_id": a_ifcmodel_id}))
+            )
+            
+            model_delete_result = get_asyncjob_result(ifcmodel_collection.delete(a_ifcmodel_id))
+            instance_delete_result = get_asyncjob_result(ifcinstance_collection.delete_many([d["_to"].split("/")[1] for d in belongs_documents], silent=True))
+            belongs_delete_result = get_asyncjob_result(belongs_collection.delete_many(belongs_documents, silent=True))
+            reference_delete_result = get_asyncjob_result(reference_collection.delete_many(reference_documents, silent=True))
+            inverse_delete_result = get_asyncjob_result(inverse_collection.delete_many(inverse_documents, silent=True))
+
+        finally:
+            client.close()
+
+        return model_delete_result and instance_delete_result and belongs_delete_result and reference_delete_result and inverse_delete_result
 
 
 from dto import *

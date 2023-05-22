@@ -100,6 +100,16 @@ class PostgreSQLIfcGeometryDataRepository(IfcGeometryDataRepository):
                 cur.executemany(insert_query, insert_elements)
                 conn.commit()
                 return True
+            
+    def remove_by_ifcmodelid(self, a_ifcmodel_id: IfcModelId):
+
+        delete_query = "DELETE FROM ifcgeometry WHERE ifcmodel_id = %s"
+
+        with self._get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(delete_query, (a_ifcmodel_id))
+                conn.commit()
+                return True
 
 
     def _convert_vertices(self, vertices: List[Vertex] ) -> List[float]:

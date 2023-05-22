@@ -67,6 +67,23 @@ def upload_ifc_file():
     return jsonify(msg)
 
 
+@app.route("/v1/ifcmodel/<ifcmodelid>", methods=["DELETE"])
+def delete_ifcmodel(ifcmodelid):
+    print("receive delete request")
+    handler = IFCModelCommandHandler()
+    command = DeleteIFCModelByModelId(ifcmodelid)
+    is_operation_success = handler.handle(command)
+
+    if is_operation_success:
+        return jsonify({
+            "message": "delete finished"
+        })
+    else:
+        return jsonify({
+            "message": "delete unsuccessful"
+        })
+
+
 @app.route("/v1/ifcmodel/<ifcmodelid>", methods=["GET"])
 def get_ifcmodel(ifcmodelid):
     handler = IFCModelQueryHandler()
