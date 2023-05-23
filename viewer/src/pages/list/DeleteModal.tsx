@@ -5,11 +5,14 @@ import { ModalState } from './state';
 import { deleteToModelServer, deleteToGeometryServer } from 'apiServices/deleteIfcFile';
 
 const onClickSubmit = async (modelId: string) => {
+    console.log("click")
     if (modelId === '') {
         return
     }
     const resToModelServer = await deleteToModelServer(modelId)
+    console.log(resToModelServer)
     const resToGeometryServer = await deleteToGeometryServer(modelId)
+    console.log(resToGeometryServer)
 }
 
 const DeleteModal: React.FC<{
@@ -29,7 +32,9 @@ const DeleteModal: React.FC<{
             <Reactstrap.ModalFooter>
                 <Reactstrap.Button
                     color='danger'
-                    active>
+                    active
+                    onClick={() => {onClickSubmit(props.ifcModelId)}}
+                >
                     削除
                 </Reactstrap.Button>
                 <Reactstrap.Button
