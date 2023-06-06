@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Split from "react-split";
 import { useParams } from "react-router-dom";
 
 import { guidContext, useGuidContext } from './contexts'
 import SingleElement from './ThreeDView'
+import GlbModels from './GlbModels';
 import TreeRow from './TreeView'
 import { Geometry } from 'innerDataModel/Geometry';
 import { TreeNode } from 'innerDataModel/TreeNode';
@@ -12,7 +13,7 @@ import { getAllModelGeometry } from 'apiServices/getAllModelGeometry';
 import { ModelViewPageProps } from "main/routes";
 
 import { AssertionError } from "assert";
-import { OrbitControls } from "@react-three/drei";
+import { Gltf, OrbitControls, useGLTF } from "@react-three/drei";
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, SSAO } from '@react-three/postprocessing';
 import { BlendFunction } from "postprocessing";
@@ -119,11 +120,9 @@ const View = () => {
               frameloop="demand"
               camera={{position: [-3, 20, 0]}}
               >
-              {
-                bufGeos.map((bufGeo: BufferGeometry, idx) => {
-                  return (<SingleElement bufGeo={bufGeo} colors={colors[idx]} guid={guids[idx]} modelId={modelId}/>)
-                })
-              }
+              <Suspense fallback={null}>
+                <GlbModels modelId={modelId}/>
+              </Suspense>
               <ambientLight />
               <pointLight position={[10, 10, 10]} />
               <OrbitControls />
