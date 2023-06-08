@@ -6,6 +6,8 @@ import { guidContext, useGuidContext } from './contexts'
 import SingleElement from './ThreeDView'
 import GlbModels from './GlbModels';
 import TreeRow from './TreeView'
+import SelectToZoom from './SelectToZoom';
+import { Bounds } from './Bounds'
 import { Geometry } from 'innerDataModel/Geometry';
 import { TreeNode } from 'innerDataModel/TreeNode';
 import { getTreeData } from 'apiServices/getTreeData';
@@ -13,7 +15,7 @@ import { getAllModelGeometry } from 'apiServices/getAllModelGeometry';
 import { ModelViewPageProps } from "main/routes";
 
 import { AssertionError } from "assert";
-import { Gltf, OrbitControls, useGLTF } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, SSAO } from '@react-three/postprocessing';
 import { BlendFunction } from "postprocessing";
@@ -121,11 +123,14 @@ const View = () => {
               camera={{position: [-3, 20, 0]}}
               >
               <Suspense fallback={null}>
-                <GlbModels modelId={modelId}/>
+                <Bounds fit clip margin={1.2} fixedOrientation>
+                  <GlbModels modelId={modelId}/>
+                  <SelectToZoom />
+                </Bounds>
               </Suspense>
+              <OrbitControls makeDefault />
               <ambientLight />
               <pointLight position={[10, 10, 10]} />
-              <OrbitControls />
               {
                 useSAO === "with-effect"
                 ? (              

@@ -33,11 +33,13 @@ const GlbModels: React.FC<{
             ? <mesh
                     geometry={node.geometry}
                     material-color={"yellow"}
+                    name={node.userData.global_id}
                     onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id)))}
                 />
             : <mesh
                     geometry={node.geometry}
                     material={node.material}
+                    name={node.userData.global_id}
                     onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id)))}
                 />             
         )}
