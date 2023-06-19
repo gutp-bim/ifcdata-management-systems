@@ -117,6 +117,12 @@ class IfcGeometryData(Domain):
             "face_color": self.face_color.value
         }
 
+    def to_dto(self) -> IfcGeometryDataDTO:
+        vertices = list(itertools.chain.from_iterable([[vertex.x, vertex.y, vertex.z] for vertex in self.vertices]))
+        normals = list(itertools.chain.from_iterable([[normal.x, normal.y, normal.z] for normal in self.normals]))
+
+        return IfcGeometryDataDTO(self.ifc_model_id.value, self.global_id.value, self.class_name.value, vertices, self.indices.value, normals, self.face_colors.value)
+
 
 class IfcGeometryDataRepository(metaclass=ABCMeta):
     """"""
@@ -138,6 +144,10 @@ class IfcGeometryDataDAO(metaclass=ABCMeta):
 
     @abstractclassmethod
     def find_by_class_name(self, ifc_model_id: IfcModelId, class_name: ClassName) -> List[IfcGeometryDataDTO]:
+        pass
+
+    @abstractclassmethod
+    def find_glb_by_ifcmodel_id(self, ifcmodel_id: str) -> bytes:
         pass
 
 

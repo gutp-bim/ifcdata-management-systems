@@ -58,15 +58,10 @@ def get_all_geometries(ifcmodel_id):
 
 @app.route("/v1/ifcgeometry/<ifcmodel_id>.glb", methods=["GET"])
 def get_all_geometries_glb(ifcmodel_id):
-    query = None
+    query = GetGeometryDataByIFCModelId(ifcmodel_id)
     query_handler = QueryHandler(dao)
-    class_name = request.args.get("class")
-    if class_name != None:
-        query = GetGeometryDataByClassName(ifcmodel_id, class_name)
-    else:
-        query = GetGeometryDataByIFCModelId(ifcmodel_id)
     result = query_handler.handle(query)
-    return export_glb(result)
+    return result
 
 
 @app.route("/v1/ifcgeometry/<ifcmodel_id>/<global_id>", methods=["GET"])

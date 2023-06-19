@@ -17,3 +17,14 @@ WITH (
 );
 ALTER TABLE ifcgeometry
   OWNER TO postgres;
+
+CREATE TABLE ifcgeometryglb
+(
+  ifcmodel_id character varying NOT NULL,
+  glb bytea
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE ifcgeometryglb
+  OWNER TO postgres;
