@@ -62,6 +62,7 @@ const View = () => {
     const bufGeos: BufferGeometry[] = []
     const colors: number[][] = []
     const guids: string[] = []
+    /*
     for (const geo of allGeo) {
       if (geo.faceColors.length === 0) {
         // skip IfcSpace
@@ -80,6 +81,7 @@ const View = () => {
         //setGuids([...guids, geo.guid])
       }
     }
+    */
     setBufGeos(bufGeos)
     setColors(colors)
     setGuids(guids)

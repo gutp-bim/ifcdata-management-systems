@@ -105,9 +105,10 @@ class PostgreSQLIfcGeometryDataRepository(IfcGeometryDataRepository):
 
 
     def _put_glb(self, ifc_model_id: IfcModelId, geometries: List[IfcGeometryDataDTO]):
+        glbs = export_glb(geometries)
         with self._get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""INSERT INTO ifcgeometryglb (ifcmodel_id, glb) VALUES (%s, %s)""", (ifc_model_id, export_glb(geometries)))
+                cur.execute("""INSERT INTO ifcgeometryglb (ifcmodel_id, glb_normal, glb_10, glb_40, glb_70) VALUES (%s, %s, %s, %s, %s)""", (ifc_model_id, glbs[0], glbs[3], glbs[2], glbs[1]))
                 conn.commit()
 
             
@@ -209,9 +210,16 @@ class PostgreSQLIfcGeometryDataDAO(IfcGeometryDataDAO):
    
 
                 
-    def find_glb_by_ifcmodel_id(self, ifcmodel_id: str) -> bytes:
+    def find_glb_by_ifcmodel_id(self, ifcmodel_id: str, lod: int) -> bytes:
         """"""
-        query = "SELECT glb FROM ifcgeometryglb WHERE ifcmodel_id = %s"
+        if lod == 1:
+            query = "SELECT glb_10 FROM ifcgeometryglb WHERE ifcmodel_id = %s"
+        elif lod == 2:
+            query = "SELECT glb_40 FROM ifcgeometryglb WHERE ifcmodel_id = %s"
+        elif lod == 3:
+            query = "SELECT glb_70 FROM ifcgeometryglb WHERE ifcmodel_id = %s"
+        else:
+            query = "SELECT glb_normal FROM ifcgeometryglb WHERE ifcmodel_id = %s"
         with self._get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (ifcmodel_id, ))

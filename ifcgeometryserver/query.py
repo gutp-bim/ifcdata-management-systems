@@ -31,6 +31,7 @@ class GetGeometryDataByClassName(Query):
 class GetGeometryDataGlbByIFCModelId(Query):
     """"""
     ifcmodel_id: str
+    lod: int
 
 
 class QueryHandler(object):
@@ -67,4 +68,4 @@ def _(command, dao):
 
 @_when.register(GetGeometryDataGlbByIFCModelId)
 def _(command, dao):
-    return dao.find_glb_by_ifcmodel_id(command.ifcmodel_id)
+    return dao.find_glb_by_ifcmodel_id(command.ifcmodel_id, command.lod)

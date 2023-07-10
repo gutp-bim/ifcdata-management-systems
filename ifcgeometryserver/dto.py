@@ -24,10 +24,10 @@ class IfcGeometryDataDTO(object):
         }
 
 
-def export_glb(geometries: List[IfcGeometryDataDTO]):
+def export_glb(geometries: List[IfcGeometryDataDTO], rates=[1, 0.5, 0.25, 0.07]):
     import trimesh
 
-    scene = trimesh.Scene()
+    scenes = {rate: trimesh.Scene() for rate in rates}
 
     for geometry in geometries:
         vertices = geometry.vertices
@@ -38,22 +38,36 @@ def export_glb(geometries: List[IfcGeometryDataDTO]):
         faces = [[indices[i], indices[i+1], indices[i+2]] for i in range(0, len(indices), 3)]
 
         if len(face_colors) > 0:
-            mesh = trimesh.Trimesh(
-                vertices = vertex_list, faces=faces, face_colors=geometry.face_colors,
-                metadata= {
-                    "ifcmodel_id": geometry.ifcmodel_id,
-                    "global_id": geometry.global_id,
-                    "class_name": geometry.class_name
-                })
-            scene.add_geometry(mesh)
+            default_mesh = trimesh.Trimesh(vertices = vertex_list, faces=faces, face_colors=geometry.face_colors)
         else:
-            mesh = trimesh.Trimesh(
-                vertices = vertex_list, faces=faces,
-                metadata= {
-                    "ifcmodel_id": geometry.ifcmodel_id,
-                    "global_id": geometry.global_id,
-                    "class_name": geometry.class_name
-                })
-            scene.add_geometry(mesh)
+            default_mesh = trimesh.Trimesh(vertices = vertex_list, faces=faces)
+        for rate in rates:
+            cur_scene = scenes[rate]
+            if rate == 1 or geometry.class_name in ["IfcBeam", "IfcFlowTerminal", "IfcSlab", "IfcWallStandardCase"]:
+                default_mesh.metadata = {
+                                "ifcmodel_id": geometry.ifcmodel_id,
+                                "global_id": geometry.global_id,
+                                "class_name": geometry.class_name
+                            }
+                cur_scene.add_geometry(default_mesh)
+            else:
+                simple = to_open3d(default_mesh).simplify_quadric_decimation(int(len(faces)*rate))
+                simple_trimesh = trimesh.Trimesh(
+                            vertices = simple.vertices, faces=simple.triangles, vertex_colors=simple.vertex_colors,
+                            metadata= {
+                                "ifcmodel_id": geometry.ifcmodel_id,
+                                "global_id": geometry.global_id,
+                                "class_name": geometry.class_name
+                            })
+                cur_scene.add_geometry(simple_trimesh)
+            scenes[rate] = cur_scene
+    return [scene.export(None, "glb") for scene in scenes.values()]
 
-    return scene.export(None, "glb")
+def to_open3d(mesh):
+    import open3d
+    import numpy as np
+    o3d_mesh = open3d.geometry.TriangleMesh()
+    o3d_mesh.vertices = open3d.utility.Vector3dVector(np.array(mesh.vertices.copy()))
+    o3d_mesh.triangles = open3d.utility.Vector3iVector(np.array(mesh.faces.copy()))
+    o3d_mesh.vertex_colors = open3d.utility.Vector3dVector(np.array([[rgba[0]/255, rgba[1]/255, rgba[2]/255] for rgba in mesh.visual.vertex_colors]))
+    return o3d_mesh

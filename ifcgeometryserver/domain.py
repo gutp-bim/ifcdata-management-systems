@@ -147,7 +147,7 @@ class IfcGeometryDataDAO(metaclass=ABCMeta):
         pass
 
     @abstractclassmethod
-    def find_glb_by_ifcmodel_id(self, ifcmodel_id: str) -> bytes:
+    def find_glb_by_ifcmodel_id(self, ifcmodel_id: str, lod: int) -> bytes:
         pass
 
 
