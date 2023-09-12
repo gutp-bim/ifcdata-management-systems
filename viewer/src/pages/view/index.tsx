@@ -47,7 +47,7 @@ const createGeometryByMaterialMap = (geo: Geometry) => {
 }
  
 const View = () => {
-  const { modelId } = useParams<ModelViewPageProps>();
+  const { modelId, lod } = useParams<ModelViewPageProps>();
   if (modelId === undefined || modelId === null) {
     throw new AssertionError(
         {message: `Expected modelId to be defined, but received ${modelId}`}
@@ -126,7 +126,7 @@ const View = () => {
               >
               <Suspense fallback={null}>
                 <Bounds fit clip margin={1.2} fixedOrientation>
-                  <GlbModels modelId={modelId}/>
+                  <GlbModels modelId={modelId} lod={lod}/>
                   <SelectToZoom />
                 </Bounds>
               </Suspense>

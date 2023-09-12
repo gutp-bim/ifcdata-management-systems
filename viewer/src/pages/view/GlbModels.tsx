@@ -14,11 +14,15 @@ type GLTFResult = GLTF & {
 }
 
 const GlbModels: React.FC<{
-    modelId: string
+    modelId: string,
+    lod: string | undefined
    }> = (props) => {
     console.log(props.modelId)
     const ctx = useContext(guidContext)
-    const { nodes } = useGLTF(`http://localhost:8000/v1/ifcgeometry/${props.modelId}.glb`) as GLTFResult
+    const url = (typeof props.lod === "undefined" || props.lod === "3")
+        ? `http://localhost:8000/v1/ifcgeometry/${props.modelId}-3.glb`
+        : `http://localhost:8000/v1/ifcgeometry/${props.modelId}-${props.lod}.glb`
+    const { nodes } = useGLTF(url) as GLTFResult
     const handleClick = (guid: string) => {
         console.log(guid)
         //setShowDetail(false)
