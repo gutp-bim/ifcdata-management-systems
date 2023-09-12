@@ -22,9 +22,8 @@ CREATE TABLE ifcgeometryglb
 (
   ifcmodel_id character varying NOT NULL,
   glb_normal bytea,
-  glb_10 bytea,
-  glb_40 bytea,
-  glb_70 bytea
+  glb_lod2 bytea,
+  glb_lod1 bytea
 )
 WITH (
   OIDS=FALSE

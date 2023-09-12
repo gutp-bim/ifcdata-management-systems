@@ -24,10 +24,11 @@ class IfcGeometryDataDTO(object):
         }
 
 
-def export_glb(geometries: List[IfcGeometryDataDTO], rates=[1, 0.5, 0.25, 0.07]):
+def export_glb(geometries: List[IfcGeometryDataDTO], boxel_sizes=[0, 0.01, 0.05]):
+    # boxel_size=0 means no simplification.
     import trimesh
 
-    scenes = {rate: trimesh.Scene() for rate in rates}
+    scenes = {boxel_size: trimesh.Scene() for boxel_size in boxel_sizes}
 
     for geometry in geometries:
         vertices = geometry.vertices
@@ -41,9 +42,9 @@ def export_glb(geometries: List[IfcGeometryDataDTO], rates=[1, 0.5, 0.25, 0.07])
             default_mesh = trimesh.Trimesh(vertices = vertex_list, faces=faces, face_colors=geometry.face_colors)
         else:
             default_mesh = trimesh.Trimesh(vertices = vertex_list, faces=faces)
-        for rate in rates:
-            cur_scene = scenes[rate]
-            if rate == 1 or geometry.class_name in ["IfcBeam", "IfcFlowTerminal", "IfcSlab", "IfcWallStandardCase"]:
+        for boxel_size in scenes.keys():
+            cur_scene = scenes[boxel_size]
+            if boxel_size == 0:
                 default_mesh.metadata = {
                                 "ifcmodel_id": geometry.ifcmodel_id,
                                 "global_id": geometry.global_id,
@@ -51,7 +52,7 @@ def export_glb(geometries: List[IfcGeometryDataDTO], rates=[1, 0.5, 0.25, 0.07])
                             }
                 cur_scene.add_geometry(default_mesh)
             else:
-                simple = to_open3d(default_mesh).simplify_quadric_decimation(int(len(faces)*rate))
+                simple = to_open3d(default_mesh).simplify_vertex_clustering(boxel_size)
                 simple_trimesh = trimesh.Trimesh(
                             vertices = simple.vertices, faces=simple.triangles, vertex_colors=simple.vertex_colors,
                             metadata= {
@@ -60,7 +61,7 @@ def export_glb(geometries: List[IfcGeometryDataDTO], rates=[1, 0.5, 0.25, 0.07])
                                 "class_name": geometry.class_name
                             })
                 cur_scene.add_geometry(simple_trimesh)
-            scenes[rate] = cur_scene
+            scenes[boxel_size] = cur_scene
     return [scene.export(None, "glb") for scene in scenes.values()]
 
 def to_open3d(mesh):
