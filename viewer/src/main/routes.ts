@@ -14,7 +14,7 @@ export const Routing = {
     }),
 };
 
-export type ModelViewPageProps = { modelId: string };
+export type ModelViewPageProps = { modelId: string, lod: string };
 
 export const routes = {
     root: Routing.simple("/"),
@@ -24,8 +24,8 @@ export const routes = {
         list: Routing.simple("/models/list"),
         item: {
             view: Routing.parameterized<ModelViewPageProps>(
-                "/models/item/:modelId/view",
-                ({modelId}) => `/models/item/${modelId}/view`
+                "/models/item/:modelId/view/:lod",
+                ({modelId, lod}) => `/models/item/${modelId}/view/${lod}`
             )
         },
     },

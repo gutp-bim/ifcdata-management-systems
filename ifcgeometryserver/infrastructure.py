@@ -10,7 +10,7 @@ from domain import (
     Vertex, Normal, create_ifc_geometry_data, IfcGeometryData, Vertex, Normal)
 
 
-from dto import IfcGeometryDataDTO
+from dto import IfcGeometryDataDTO, export_glb
 
 
 class IfcOpenShellIfcFileAdopter(IfcFileAdopter):
@@ -99,7 +99,18 @@ class PostgreSQLIfcGeometryDataRepository(IfcGeometryDataRepository):
             with conn.cursor() as cur:
                 cur.executemany(insert_query, insert_elements)
                 conn.commit()
-                return True
+
+        self._put_glb(ifc_geometry_data_list[0].ifc_model_id.value, [ifc_geometry_data.to_dto() for ifc_geometry_data in ifc_geometry_data_list])
+        return True
+
+
+    def _put_glb(self, ifc_model_id: IfcModelId, geometries: List[IfcGeometryDataDTO]):
+        glbs = export_glb(geometries)
+        with self._get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""INSERT INTO ifcgeometryglb (ifcmodel_id, glb_normal, glb_lod2, glb_lod1) VALUES (%s, %s, %s, %s)""", (ifc_model_id, glbs[0], glbs[1], glbs[2]))
+                conn.commit()
+
             
     def remove_by_ifcmodelid(self, a_ifcmodel_id: IfcModelId):
 
@@ -196,6 +207,26 @@ class PostgreSQLIfcGeometryDataDAO(IfcGeometryDataDAO):
                 conn.commit()
                 result = cur.fetchall()
                 return [IfcGeometryDataDTO(r[0], r[1], r[2], r[3], r[4], r[5], r[6]) for r in result]
+   
+
+                
+    def find_glb_by_ifcmodel_id(self, ifcmodel_id: str, lod: int) -> bytes:
+        """"""
+        if lod == 1:
+            query = "SELECT glb_lod1 FROM ifcgeometryglb WHERE ifcmodel_id = %s"
+        elif lod == 2:
+            query = "SELECT glb_lod2 FROM ifcgeometryglb WHERE ifcmodel_id = %s"
+        else:
+            query = "SELECT glb_normal FROM ifcgeometryglb WHERE ifcmodel_id = %s"
+        with self._get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (ifcmodel_id, ))
+                conn.commit()
+                result = cur.fetchone()
+                if result:
+                    return bytes(result[0])
+                else:
+                    return None
 
 
     def _get_connection(self):

@@ -12,6 +12,7 @@ import { MetaDataModel } from 'innerDataModel/MetaDataModel';
 const View = () => {
   const [modalState, setModalState] = useState<ModalState>('None')
   const [targetIfc, setTargetIfc] = useState<[string, string]>(['', ''])
+  const [lod, setLod] = useState<string>("1")
   const models: MetaDataModel[] = useGetModels()
   return (
     <div>
@@ -27,6 +28,13 @@ const View = () => {
           </div>
         </Reactstrap.CardHeader>
         <Reactstrap.CardBody>
+          <div>
+            <select name="effect" onChange={(e) => setLod(e.target.value)} value={lod}>
+              <option value="3">3Dモデル圧縮なし</option>
+              <option value="2">3Dモデル圧縮率低 - ボクセルサイズ0.01</option>
+              <option value="1">3Dモデル圧縮率高 - ボクセルサイズ0.05</option>
+            </select>
+          </div>
           <Reactstrap.Table>
             <thead>
               <tr>
@@ -40,7 +48,7 @@ const View = () => {
                 return (
                   <tr key={model.id}>
                     <td>
-                      <Link to={routes.models.item.view.buildURL({modelId: model.id})}>
+                      <Link to={routes.models.item.view.buildURL({modelId: model.id, lod: lod})}>
                         {model.name}
                       </Link>
                     </td>

@@ -6,7 +6,7 @@ import configparser
 from command import CommandHandler, StoreIFCGeometryData, DeleteIFCGeometryData
 from query import (
     QueryHandler, GetGeometryDataByIFCModelId,
-    GetGeometryDataByClassName, GetGeometryDataByGlobalId)
+    GetGeometryDataByClassName, GetGeometryDataByGlobalId, GetGeometryDataGlbByIFCModelId)
 from dto import export_glb
 from infrastructure import IfcOpenShellIfcFileAdopter, PostgreSQLIfcGeometryDataDAO, PostgreSQLIfcGeometryDataRepository
 
@@ -56,17 +56,12 @@ def get_all_geometries(ifcmodel_id):
     return jsonify(message)
 
 
-@app.route("/v1/ifcgeometry/<ifcmodel_id>.glb", methods=["GET"])
-def get_all_geometries_glb(ifcmodel_id):
-    query = None
+@app.route("/v1/ifcgeometry/<ifcmodel_id>-<lod>.glb", methods=["GET"])
+def get_all_geometries_glb(ifcmodel_id, lod):
     query_handler = QueryHandler(dao)
-    class_name = request.args.get("class")
-    if class_name != None:
-        query = GetGeometryDataByClassName(ifcmodel_id, class_name)
-    else:
-        query = GetGeometryDataByIFCModelId(ifcmodel_id)
+    query = GetGeometryDataGlbByIFCModelId(ifcmodel_id, int(lod))
     result = query_handler.handle(query)
-    return export_glb(result)
+    return result
 
 
 @app.route("/v1/ifcgeometry/<ifcmodel_id>/<global_id>", methods=["GET"])
