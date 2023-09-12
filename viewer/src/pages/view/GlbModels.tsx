@@ -4,25 +4,13 @@ import { guidContext } from './contexts'
 
 import { useGLTF } from '@react-three/drei'
 import { Mesh, MeshStandardMaterial } from 'three'
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-
-type GLTFResult = GLTF & {
-    nodes: Object
-    materials: {
-        '': THREE.MeshStandardMaterial
-    }
-}
+import { GLTFResult } from 'innerDataModel/GltfResult';
 
 const GlbModels: React.FC<{
-    modelId: string,
-    lod: string | undefined
+    nodes: Object
+    selectedClasses: string[]
    }> = (props) => {
-    console.log(props.modelId)
     const ctx = useContext(guidContext)
-    const url = (typeof props.lod === "undefined" || props.lod === "3")
-        ? `http://localhost:8000/v1/ifcgeometry/${props.modelId}-3.glb`
-        : `http://localhost:8000/v1/ifcgeometry/${props.modelId}-${props.lod}.glb`
-    const { nodes } = useGLTF(url) as GLTFResult
     const handleClick = (guid: string) => {
         console.log(guid)
         //setShowDetail(false)
@@ -32,28 +20,25 @@ const GlbModels: React.FC<{
       }
     return (
         <>
-        {Object.values(nodes).map((node: Mesh) => 
-            node.userData.global_id===ctx.guid
-            ? <mesh
-                    geometry={node.geometry}
-                    material-color={"yellow"}
-                    name={node.userData.global_id}
-                    onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id)))}
-                />
-            : <mesh
-                    geometry={node.geometry}
-                    material={node.material}
-                    name={node.userData.global_id}
-                    onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id)))}
-                />             
+        {Object.values(props.nodes).map((node: Mesh) =>
+            props.selectedClasses.includes(node.userData.class_name) && 
+            ( node.userData.global_id===ctx.guid
+                ? <mesh
+                        geometry={node.geometry}
+                        material-color={"yellow"}
+                        name={node.userData.global_id}
+                        onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id)))}
+                    />
+                : <mesh
+                        geometry={node.geometry}
+                        material={node.material}
+                        name={node.userData.global_id}
+                        onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id)))}
+                    />
+            )
         )}
         </>
     )
 }
-
-// yellowじゃなくてblackになる理由を探す
-// API経由でuseGLTFやる方法探す
-// →glb対応完了
-// clickFocus
 
 export default GlbModels

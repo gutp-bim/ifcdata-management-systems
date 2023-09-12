@@ -8,15 +8,16 @@ import TreeRow from './TreeView'
 import SelectToZoom from './SelectToZoom';
 import { Bounds } from './Bounds'
 import { TreeNode } from 'innerDataModel/TreeNode';
+import { GLTFResult } from 'innerDataModel/GltfResult';
 import { getTreeData } from 'apiServices/getTreeData';
 import { ModelViewPageProps } from "main/routes";
 
 import { AssertionError } from "assert";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, SSAO } from '@react-three/postprocessing';
 import { BlendFunction } from "postprocessing";
-import { BufferGeometry, BufferAttribute } from 'three';
+import { BufferGeometry, BufferAttribute, Mesh } from 'three';
 
 import 'styles.css'
  
@@ -27,10 +28,16 @@ const View = () => {
         {message: `Expected modelId to be defined, but received ${modelId}`}
     )
   }
+  const url = (typeof lod === "undefined" || lod === "3")
+    ? `http://localhost:8000/v1/ifcgeometry/${modelId}-3.glb`
+    : `http://localhost:8000/v1/ifcgeometry/${modelId}-${lod}.glb`
+  const { nodes } = useGLTF(url) as GLTFResult
   const [roots, setRoots] = useState<TreeNode[]>([])
   useEffect(() => {
     setRoots(getTreeData(modelId))
   }, [modelId])
+  const classNames = Array.from(new Set(Object.values(nodes).map((node: Mesh) => node.userData.class_name))).filter(el => typeof el !== "undefined")
+  const [selectedClasses, setSelectedClasses] = useState(classNames)
   const [useSAO, setUseSAO] = useState("no-effect")
   const ctx = useGuidContext();
   
@@ -47,8 +54,26 @@ const View = () => {
         sizes={[25, 75]}     
       >
         <div style={{ height: `${window.innerHeight}px`, overflow: "scroll"}}>
-          {roots.map((root) => (
-            <TreeRow key={`${root.type}-${root.guid}`} node={root} level={0} />
+          {classNames.map((className) => (
+            <p>
+            <label>
+              <input
+                type="checkbox"
+                value={className}
+                checked={selectedClasses.includes(className)}
+                onChange={(e) => {
+                  if (selectedClasses.includes(e.target.value)) {
+                    setSelectedClasses(
+                      selectedClasses.filter((selectedClasses) => selectedClasses !== e.target.value)
+                    )
+                  } else {
+                    setSelectedClasses([...selectedClasses, e.target.value])
+                  }
+                }}
+              />
+              {className}
+            </label>
+            </p>
           ))}
         </div>
         <Split
@@ -70,7 +95,9 @@ const View = () => {
               >
               <Suspense fallback={null}>
                 <Bounds fit clip margin={1.2} fixedOrientation>
-                  <GlbModels modelId={modelId} lod={lod}/>
+                  <Suspense fallback={null}>
+                    <GlbModels nodes={nodes} selectedClasses={selectedClasses}/>
+                  </Suspense>
                   <SelectToZoom />
                 </Bounds>
               </Suspense>
