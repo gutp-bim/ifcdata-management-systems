@@ -18,8 +18,10 @@ import { Canvas } from '@react-three/fiber';
 import { EffectComposer, SSAO } from '@react-three/postprocessing';
 import { BlendFunction } from "postprocessing";
 import { BufferGeometry, BufferAttribute, Mesh } from 'three';
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 
 import 'styles.css'
+import 'react-tabs/style/react-tabs.css';
  
 const View = () => {
   const { modelId, lod } = useParams<ModelViewPageProps>();
@@ -54,27 +56,41 @@ const View = () => {
         sizes={[25, 75]}     
       >
         <div style={{ height: `${window.innerHeight}px`, overflow: "scroll"}}>
-          {classNames.map((className) => (
-            <p>
-            <label>
-              <input
-                type="checkbox"
-                value={className}
-                checked={selectedClasses.includes(className)}
-                onChange={(e) => {
-                  if (selectedClasses.includes(e.target.value)) {
-                    setSelectedClasses(
-                      selectedClasses.filter((selectedClasses) => selectedClasses !== e.target.value)
-                    )
-                  } else {
-                    setSelectedClasses([...selectedClasses, e.target.value])
-                  }
-                }}
-              />
-              {className}
-            </label>
-            </p>
-          ))}
+          <Tabs>
+            <TabList>
+              <Tab>ツリービュー</Tab>
+              <Tab>IFCクラス</Tab>
+            </TabList>
+            <TabPanel>
+              {roots.map((root) => (
+                <TreeRow key={`${root.type}-${root.guid}`} node={root} level={0} />
+              ))}
+            </TabPanel>
+            <TabPanel>
+              {classNames.map((className) => (
+                <p>
+                <label>
+                  <input
+                    type="checkbox"
+                    value={className}
+                    checked={selectedClasses.includes(className)}
+                    onChange={(e) => {
+                      if (selectedClasses.includes(e.target.value)) {
+                        setSelectedClasses(
+                          selectedClasses.filter((selectedClasses) => selectedClasses !== e.target.value)
+                        )
+                      } else {
+                        setSelectedClasses([...selectedClasses, e.target.value])
+                      }
+                    }}
+                  />
+                  {className}
+                </label>
+                </p>
+              ))}
+            </TabPanel>
+          </Tabs>
+
         </div>
         <Split
           className="flex-vertical"
