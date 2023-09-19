@@ -34,6 +34,7 @@ const View = () => {
     ? `http://localhost:8000/v1/ifcgeometry/${modelId}-3.glb`
     : `http://localhost:8000/v1/ifcgeometry/${modelId}-${lod}.glb`
   const { nodes } = useGLTF(url) as GLTFResult
+  console.log(Object.values(nodes).length)
   const [roots, setRoots] = useState<TreeNode[]>([])
   useEffect(() => {
     setRoots(getTreeData(modelId))
@@ -112,7 +113,7 @@ const View = () => {
               <Suspense fallback={null}>
                 <Bounds fit clip margin={1.2} fixedOrientation>
                   <Suspense fallback={null}>
-                    <GlbModels nodes={nodes} selectedClasses={selectedClasses}/>
+                    <GlbModels nodes={nodes} selectedClasses={selectedClasses} modelId={modelId}/>
                   </Suspense>
                   <SelectToZoom />
                 </Bounds>
