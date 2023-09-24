@@ -110,6 +110,18 @@ export const getTreeData: ((modelId: string) => TreeNode[]) = (modelId: string) 
             }
             break;
         case "Space":
+            for (const child of el.bot["https://w3id.org/bot#hasSpace"] || []) {
+                const bot = all.find(el => el["@id"] === child["@id"])
+                if (typeof bot === 'undefined') {
+                    continue
+                }
+                const node: TreeNode = {
+                    guid: bot["http://www.buildingsmart-tech.org/IFC4#GlobalId"][0]["@value"],
+                    type: "Space",
+                    children: []
+                }
+                el.node.children.push(node)
+            }
             for (const child of el.bot["https://w3id.org/bot#hasElement"] || []) {
                 const bot = all.find(el => el["@id"] === child["@id"])
                 if (typeof bot === 'undefined') {
