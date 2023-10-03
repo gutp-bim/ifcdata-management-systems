@@ -10,6 +10,7 @@ import { Bounds } from './Bounds'
 import { TreeNode } from 'innerDataModel/TreeNode';
 import { GLTFResult } from 'innerDataModel/GltfResult';
 import { getTreeData } from 'apiServices/getTreeData';
+import { getGlbModels } from 'apiServices/getGlbModels';
 import { ModelViewPageProps } from "main/routes";
 
 import { AssertionError } from "assert";
@@ -30,11 +31,7 @@ const View = () => {
         {message: `Expected modelId to be defined, but received ${modelId}`}
     )
   }
-  const url = (typeof lod === "undefined" || lod === "3")
-    ? `http://localhost:8000/v1/ifcgeometry/${modelId}-3.glb`
-    : `http://localhost:8000/v1/ifcgeometry/${modelId}-${lod}.glb`
-  const { nodes } = useGLTF(url) as GLTFResult
-  console.log(Object.values(nodes).length)
+  const nodes = getGlbModels(modelId, lod)
   const [roots, setRoots] = useState<TreeNode[]>([])
   useEffect(() => {
     setRoots(getTreeData(modelId))
@@ -112,9 +109,7 @@ const View = () => {
               >
               <Suspense fallback={null}>
                 <Bounds fit clip margin={1.2} fixedOrientation>
-                  <Suspense fallback={null}>
-                    <GlbModels nodes={nodes} selectedClasses={selectedClasses} modelId={modelId}/>
-                  </Suspense>
+                  <GlbModels nodes={nodes} selectedClasses={selectedClasses} modelId={modelId}/>
                   <SelectToZoom />
                 </Bounds>
               </Suspense>
