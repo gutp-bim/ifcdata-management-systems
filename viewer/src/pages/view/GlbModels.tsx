@@ -1,15 +1,17 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useMemo, useState } from 'react'
 import * as Reactstrap from "reactstrap"
 
 import { guidContext } from './contexts' 
 import { useGetInstanceDetail } from 'apiServices/getInstanceDetail';
 
 import { Html } from "@react-three/drei";
-import { Mesh, Vector3 } from 'three'
+import { BufferGeometry, Mesh, Vector3, Plane, Material, Box3 } from 'three'
 
 const GlbModels: React.FC<{
     nodes: Object
-    selectedClasses: string[]
+    selectedClasses: string[],
+    boudingBoxes: Map<string, Box3 | null>,
+    planeHeight: number,
     modelId: string
    }> = (props) => {
     const ctx = useContext(guidContext)
@@ -22,37 +24,68 @@ const GlbModels: React.FC<{
         setClickPoint(point)
         setShowDetail(true)
       }
+    const clipHeight = props.planeHeight
+    const clipPlanes = useMemo(() => {
+      return [new Plane(new Vector3(0,0, -1), clipHeight)]
+    }, [clipHeight])
+
     return (
         <>
-        {Object.values(props.nodes).map((node: Mesh) =>
-            props.selectedClasses.includes(node.userData.class_name) && 
-            ( node.userData.global_id===ctx.guid
-                ? <mesh
+        {Object.values(props.nodes).map((node: Mesh) => {
+          const boudingBoxEdge = props.boudingBoxes.get(node.userData.global_id)?.min?.z
+          if ((node.type === 'Mesh') && (typeof boudingBoxEdge !== 'undefined' && boudingBoxEdge <= clipHeight) && (props.selectedClasses).includes(node.userData.class_name)) {
+            if (node.userData.global_id===ctx.guid) {
+              return (
+                <mesh
+                    geometry={node.geometry}
+                    name={node.userData.global_id}                    
+                    onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id, e.point)))}
+                >
+                  <meshStandardMaterial
+                    color={"yellow"}
+                    clippingPlanes={clipPlanes}
+                  >
+                  </meshStandardMaterial>
+                    
+                    {(node.userData.global_id===ctx.guid && showDetail) &&
+                        <Html
+                            position={clickPoint}
+                        >
+                            <div className="detail-window">
+                                <DetailInfo modelId = {props.modelId} guid = {node.userData.global_id} />
+                                <Reactstrap.Button className="detail-close" onClick={() => setShowDetail(false)} style={{ userSelect: "none" }}>
+                                Close
+                                </Reactstrap.Button>
+                            </div>
+                        </Html>}
+                </mesh>
+              )
+            } else {
+              let material: Material | Material[] = []
+              if (Array.isArray(node.material)) {
+                material = node.material.map((mat: Material) => {
+                  mat.clippingPlanes = clipPlanes
+                  return mat
+                })
+              } else {
+                const mat = node.material
+                mat.clippingPlanes = clipPlanes
+                material = mat
+              }
+              return (
+                <mesh
                         geometry={node.geometry}
-                        material-color={"yellow"}
+                        material={material}
                         name={node.userData.global_id}
                         onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id, e.point)))}
-                    >
-                        {(node.userData.global_id===ctx.guid && showDetail) &&
-                            <Html
-                                position={clickPoint}
-                            >
-                                <div className="detail-window">
-                                    <DetailInfo modelId = {props.modelId} guid = {node.userData.global_id} />
-                                    <Reactstrap.Button className="detail-close" onClick={() => setShowDetail(false)} style={{ userSelect: "none" }}>
-                                    Close
-                                    </Reactstrap.Button>
-                                </div>
-                            </Html>}
-                    </mesh>
-                : <mesh
-                        geometry={node.geometry}
-                        material={node.material}
-                        name={node.userData.global_id}
-                        onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id, e.point)))}
-                    />
-            )
-        )}
+                    ></mesh>
+              )
+            }
+          } else {
+            return (<></>)
+          }
+        })
+        }
         </>
     )
 }

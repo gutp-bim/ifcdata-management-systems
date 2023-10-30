@@ -1,24 +1,24 @@
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Split from "react-split";
 import { useParams } from "react-router-dom";
 
 import { guidContext, useGuidContext } from './contexts'
 import GlbModels from './GlbModels';
 import TreeRow from './TreeView'
+import Plane from './Plane'
 import SelectToZoom from './SelectToZoom';
 import { Bounds } from './Bounds'
 import { TreeNode } from 'innerDataModel/TreeNode';
-import { GLTFResult } from 'innerDataModel/GltfResult';
 import { getTreeData } from 'apiServices/getTreeData';
 import { getGlbModels } from 'apiServices/getGlbModels';
 import { ModelViewPageProps } from "main/routes";
 
 import { AssertionError } from "assert";
-import { OrbitControls, useGLTF } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, SSAO } from '@react-three/postprocessing';
 import { BlendFunction } from "postprocessing";
-import { BufferGeometry, BufferAttribute, Mesh } from 'three';
+import { Mesh, BufferGeometry, Box3 } from 'three';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 
 import 'styles.css'
@@ -36,8 +36,19 @@ const View = () => {
   useEffect(() => {
     setRoots(getTreeData(modelId))
   }, [modelId])
+  const boudingBoxes: Map<string, Box3 | null> = useMemo(() => {
+    const map = new Map();
+    for (const node of Object.values(nodes)) {
+      if (node.type !== 'Mesh') continue
+      const geom: BufferGeometry = node.geometry
+      geom.computeBoundingBox()
+      map.set(node.userData.global_id, geom.boundingBox)
+    }
+    return map
+  }, [nodes])
   const classNames = Array.from(new Set(Object.values(nodes).map((node: Mesh) => node.userData.class_name))).filter(el => typeof el !== "undefined")
   const [selectedClasses, setSelectedClasses] = useState(classNames)
+  const [planeHeight, setPlaneHeight] = useState<number>(1.5)
   const [useSAO, setUseSAO] = useState("no-effect")
   const ctx = useGuidContext();
   
@@ -104,15 +115,17 @@ const View = () => {
           </div>
           <div style={{ width: `${window.innerWidth}`, height: `${window.innerHeight}px`}}>
             <Canvas
+              gl={{ localClippingEnabled: true }}
               frameloop="demand"
               camera={{position: [-3, 20, 0]}}
               >
               <Suspense fallback={null}>
                 <Bounds fit clip margin={1.2} fixedOrientation>
-                  <GlbModels nodes={nodes} selectedClasses={selectedClasses} modelId={modelId}/>
+                  <GlbModels nodes={nodes} selectedClasses={selectedClasses} boudingBoxes={boudingBoxes} planeHeight={planeHeight} modelId={modelId}/>
                   <SelectToZoom />
                 </Bounds>
               </Suspense>
+              <Plane planeHeight={planeHeight} setPlaneHeight={setPlaneHeight} boudingBoxes={boudingBoxes} />
               <OrbitControls makeDefault />
               <ambientLight />
               <pointLight position={[10, 10, 10]} />
