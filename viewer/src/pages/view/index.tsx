@@ -9,8 +9,8 @@ import Plane from './Plane'
 import SelectToZoom from './SelectToZoom';
 import { Bounds } from './Bounds'
 import { TreeNode } from 'innerDataModel/TreeNode';
-import { getTreeData } from 'apiServices/getTreeData';
-import { getGlbModels } from 'apiServices/getGlbModels';
+import { useGetTreeData } from 'apiServices/getTreeData';
+import { useGetGlbModels } from 'apiServices/getGlbModels';
 import { ModelViewPageProps } from "main/routes";
 
 import { AssertionError } from "assert";
@@ -31,11 +31,8 @@ const View = () => {
         {message: `Expected modelId to be defined, but received ${modelId}`}
     )
   }
-  const nodes = getGlbModels(modelId, lod)
-  const [roots, setRoots] = useState<TreeNode[]>([])
-  useEffect(() => {
-    setRoots(getTreeData(modelId))
-  }, [modelId])
+  const nodes = useGetGlbModels(modelId, lod)
+  const roots = useGetTreeData(modelId)
   const boudingBoxes: Map<string, Box3 | null> = useMemo(() => {
     const map = new Map();
     for (const node of Object.values(nodes)) {
