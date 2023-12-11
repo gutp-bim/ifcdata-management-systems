@@ -8,6 +8,7 @@ import TreeRow from './TreeView'
 import Plane from './Plane'
 import SelectToZoom from './SelectToZoom';
 import { Bounds } from './Bounds'
+import { ClippingMode, clippingModeOptions } from './ClippingMode';
 import { TreeNode } from 'innerDataModel/TreeNode';
 import { useGetTreeData } from 'apiServices/getTreeData';
 import { useGetGlbModels } from 'apiServices/getGlbModels';
@@ -46,8 +47,8 @@ const View = () => {
   const classNames = Array.from(new Set(Object.values(nodes).map((node: Mesh) => node.userData.class_name))).filter(el => typeof el !== "undefined")
   const [selectedClasses, setSelectedClasses] = useState(classNames)
   const [effectMode, setEffectMode] = useState("no-effect")
-  const [clippingMode, setClippingMode] = useState("no-clipping")
-  const [planeHeight, setPlaneHeight] = useState<number>(1.5)
+  const [clippingMode, setClippingMode] = useState<ClippingMode>(ClippingMode.noClip())
+  const [planePosition, setPlanePosition] = useState<number>(1.5)
   const ctx = useGuidContext();
   
   return (
@@ -114,9 +115,10 @@ const View = () => {
           </div>
                   */}
           <div>
-            <select name="clipping" onChange={(e) => setClippingMode(e.target.value)} value={clippingMode}>
-              <option value="no-clipping">断面切断なし</option>
-              <option value="z-clipping">z軸切断</option>
+            <select name="clipping" onChange={(e) => setClippingMode(ClippingMode.fromString(e.target.value))} value={clippingMode.toString()}>
+              {clippingModeOptions.map((op, idx) => (
+                <option key={idx} value={op.value}>{op.label}</option>
+              ))}
             </select>
           </div>
           <div style={{ width: `${window.innerWidth}`, height: `${window.innerHeight}px`}}>
@@ -127,11 +129,11 @@ const View = () => {
               >
               <Suspense fallback={null}>
                 <Bounds fit clip margin={1.2} fixedOrientation>
-                  <GlbModels nodes={nodes} selectedClasses={selectedClasses} boudingBoxes={boudingBoxes} clippingMode={clippingMode} planeHeight={planeHeight} modelId={modelId}/>
+                  <GlbModels nodes={nodes} selectedClasses={selectedClasses} boudingBoxes={boudingBoxes} clippingMode={clippingMode} planePosition={planePosition} modelId={modelId}/>
                   <SelectToZoom />
                 </Bounds>
               </Suspense>
-              <Plane clippingMode={clippingMode} planeHeight={planeHeight} setPlaneHeight={setPlaneHeight} boudingBoxes={boudingBoxes} />
+              <Plane clippingMode={clippingMode} planePosition={planePosition} setPlanePosition={setPlanePosition} boudingBoxes={boudingBoxes} />
               <OrbitControls makeDefault />
               <ambientLight />
               <pointLight position={[10, 10, 10]} />

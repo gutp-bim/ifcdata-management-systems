@@ -1,7 +1,8 @@
 import React, { useContext, useMemo, useState } from 'react'
 import * as Reactstrap from "reactstrap"
 
-import { guidContext } from './contexts' 
+import { guidContext } from './contexts'
+import { ClippingMode } from './ClippingMode';
 import { useGetInstanceDetail } from 'apiServices/getInstanceDetail';
 
 import { Html } from "@react-three/drei";
@@ -11,8 +12,8 @@ const GlbModels: React.FC<{
     nodes: Object
     selectedClasses: string[],
     boudingBoxes: Map<string, Box3 | null>,
-    clippingMode: string,
-    planeHeight: number,
+    clippingMode: ClippingMode,
+    planePosition: number,
     modelId: string
    }> = (props) => {
     const ctx = useContext(guidContext)
@@ -25,15 +26,25 @@ const GlbModels: React.FC<{
         setClickPoint(point)
         setShowDetail(true)
       }
-    const clipHeight = props.planeHeight
+    const clippingMode = props.clippingMode
+    const clipPosition = props.planePosition
     const clipPlanes = useMemo(() => {
-      return [new Plane(new Vector3(0,0, -1), clipHeight)]
-    }, [clipHeight])
+      if (clippingMode.enableClip) {
+        switch (true) {
+          case clippingMode.axis==='x' && clippingMode.direction==='positive': return [new Plane(new Vector3(-1,0,0), clipPosition)]
+          case clippingMode.axis==='x' && clippingMode.direction==='negative': return [new Plane(new Vector3(1,0,0), -clipPosition)]
+          case clippingMode.axis==='y' && clippingMode.direction==='positive': return [new Plane(new Vector3(0,-1,0), clipPosition)]
+          case clippingMode.axis==='y' && clippingMode.direction==='negative': return [new Plane(new Vector3(0,1,0), -clipPosition)]
+          case clippingMode.axis==='z' && clippingMode.direction==='positive': return [new Plane(new Vector3(0,0,-1), clipPosition)]
+          case clippingMode.axis==='z' && clippingMode.direction==='negative': return [new Plane(new Vector3(0,0,1), -clipPosition)]
+        }
+      } else return []
+    }, [clippingMode, clipPosition])
 
     return (
         <>
         {
-          props.clippingMode==='no-clipping'
+          clippingMode.enableClip===false
             ? (<> 
               {Object.values(props.nodes).map((node: Mesh) => {
                 if (node.type !== 'Mesh') return (<></>)
@@ -95,7 +106,7 @@ const GlbModels: React.FC<{
                 const boudingBoxEdge = props.boudingBoxes.get(node.userData.global_id)?.min?.z
                 return (
                   <>
-                  {((typeof boudingBoxEdge !== 'undefined' && boudingBoxEdge <= clipHeight) && (props.selectedClasses).includes(node.userData.class_name))
+                  {(isInRenderArea(props.boudingBoxes, node.userData.global_id, clipPosition, clippingMode) && (props.selectedClasses).includes(node.userData.class_name))
                   && <mesh
                     geometry={node.geometry}
                     material={material}
@@ -131,6 +142,38 @@ const DetailInfo: React.FC<{
           </div>
         )
     }
+}
+
+const isInRenderArea = (
+  boudingBoxes: Map<string, Box3 | null>,
+  guid: string,
+  clipPosition: number,
+  clippingMode: ClippingMode
+) => {
+  let boudingBoxEdge: number | undefined
+  if (clippingMode.enableClip) {
+    switch (true) {
+      case clippingMode.axis==='x' && clippingMode.direction==='positive':
+        boudingBoxEdge = boudingBoxes.get(guid)?.min?.x
+        return typeof boudingBoxEdge !== 'undefined' && boudingBoxEdge <= clipPosition
+      case clippingMode.axis==='x' && clippingMode.direction==='negative':
+        boudingBoxEdge = boudingBoxes.get(guid)?.max?.x
+        return typeof boudingBoxEdge !== 'undefined' && clipPosition <= boudingBoxEdge
+      case clippingMode.axis==='y' && clippingMode.direction==='positive':
+        boudingBoxEdge = boudingBoxes.get(guid)?.min?.y
+        return typeof boudingBoxEdge !== 'undefined' && boudingBoxEdge <= clipPosition
+      case clippingMode.axis==='y' && clippingMode.direction==='negative':
+        boudingBoxEdge = boudingBoxes.get(guid)?.max?.y
+        return typeof boudingBoxEdge !== 'undefined' && clipPosition <= boudingBoxEdge
+      case clippingMode.axis==='z' && clippingMode.direction==='positive':
+        boudingBoxEdge = boudingBoxes.get(guid)?.min?.z
+        return typeof boudingBoxEdge !== 'undefined' && boudingBoxEdge <= clipPosition
+      case clippingMode.axis==='z' && clippingMode.direction==='negative':
+        boudingBoxEdge = boudingBoxes.get(guid)?.max?.z
+        return typeof boudingBoxEdge !== 'undefined' && clipPosition <= boudingBoxEdge
+      default: return false
+    }
+  } else return false
 }
 
 export default GlbModels
