@@ -45,8 +45,9 @@ const View = () => {
   }, [nodes])
   const classNames = Array.from(new Set(Object.values(nodes).map((node: Mesh) => node.userData.class_name))).filter(el => typeof el !== "undefined")
   const [selectedClasses, setSelectedClasses] = useState(classNames)
+  const [effectMode, setEffectMode] = useState("no-effect")
+  const [clippingMode, setClippingMode] = useState("no-clipping")
   const [planeHeight, setPlaneHeight] = useState<number>(1.5)
-  const [useSAO, setUseSAO] = useState("no-effect")
   const ctx = useGuidContext();
   
   return (
@@ -104,31 +105,39 @@ const View = () => {
           minSize={[10, 100]}
           direction="vertical"
         >
+          {/*
           <div>
-            <select name="effect" onChange={(e) => setUseSAO(e.target.value)}>
-              <option value="no-effect" selected>SAOなし</option>
-              <option value="with-effect">SAOあり</option>
+            <select name="effect" onChange={(e) => setEffectMode(e.target.value)} value={effectMode}>
+              <option value="no-effect">SAOなし</option>
+              <option value="sao">SAOあり</option>
+            </select>
+          </div>
+                  */}
+          <div>
+            <select name="clipping" onChange={(e) => setClippingMode(e.target.value)} value={clippingMode}>
+              <option value="no-clipping">断面切断なし</option>
+              <option value="z-clipping">z軸切断</option>
             </select>
           </div>
           <div style={{ width: `${window.innerWidth}`, height: `${window.innerHeight}px`}}>
             <Canvas
               gl={{ localClippingEnabled: true }}
               frameloop="demand"
-              camera={{position: [-3, 20, 0]}}
+              camera={{position: [-3, 10, 50]}}
               >
               <Suspense fallback={null}>
                 <Bounds fit clip margin={1.2} fixedOrientation>
-                  <GlbModels nodes={nodes} selectedClasses={selectedClasses} boudingBoxes={boudingBoxes} planeHeight={planeHeight} modelId={modelId}/>
+                  <GlbModels nodes={nodes} selectedClasses={selectedClasses} boudingBoxes={boudingBoxes} clippingMode={clippingMode} planeHeight={planeHeight} modelId={modelId}/>
                   <SelectToZoom />
                 </Bounds>
               </Suspense>
-              <Plane planeHeight={planeHeight} setPlaneHeight={setPlaneHeight} boudingBoxes={boudingBoxes} />
+              <Plane clippingMode={clippingMode} planeHeight={planeHeight} setPlaneHeight={setPlaneHeight} boudingBoxes={boudingBoxes} />
               <OrbitControls makeDefault />
               <ambientLight />
               <pointLight position={[10, 10, 10]} />
               {
-                useSAO === "with-effect"
-                ? (              
+                effectMode === "sao"
+                && (              
                 <EffectComposer>
                   <SSAO 
                     blendFunction={BlendFunction.MULTIPLY}
@@ -137,7 +146,6 @@ const View = () => {
                     intensity={30}
                   />
                 </EffectComposer>)
-                : <></>
               }
 
             </Canvas>

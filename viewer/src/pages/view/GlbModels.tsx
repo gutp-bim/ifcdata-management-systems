@@ -11,6 +11,7 @@ const GlbModels: React.FC<{
     nodes: Object
     selectedClasses: string[],
     boudingBoxes: Map<string, Box3 | null>,
+    clippingMode: string,
     planeHeight: number,
     modelId: string
    }> = (props) => {
@@ -31,60 +32,79 @@ const GlbModels: React.FC<{
 
     return (
         <>
-        {Object.values(props.nodes).map((node: Mesh) => {
-          const boudingBoxEdge = props.boudingBoxes.get(node.userData.global_id)?.min?.z
-          if ((node.type === 'Mesh') && (typeof boudingBoxEdge !== 'undefined' && boudingBoxEdge <= clipHeight) && (props.selectedClasses).includes(node.userData.class_name)) {
-            if (node.userData.global_id===ctx.guid) {
-              return (
-                <mesh
-                    geometry={node.geometry}
-                    name={node.userData.global_id}                    
-                    onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id, e.point)))}
-                >
-                  <meshStandardMaterial
-                    color={"yellow"}
-                    clippingPlanes={clipPlanes}
-                  >
-                  </meshStandardMaterial>
-                    
-                    {(node.userData.global_id===ctx.guid && showDetail) &&
-                        <Html
-                            position={clickPoint}
+        {
+          props.clippingMode==='no-clipping'
+            ? (<> 
+              {Object.values(props.nodes).map((node: Mesh) => {
+                if (node.type !== 'Mesh') return (<></>)
+                let material: Material | Material[] = []
+                if (Array.isArray(node.material)) {
+                  material = node.material.map((mat: Material) => {
+                    mat.clippingPlanes = []
+                    return mat
+                  })
+                } else {
+                  const mat = node.material
+                  mat.clippingPlanes = []
+                  material = mat
+                }
+                return ((props.selectedClasses).includes(node.userData.class_name))
+                  && (
+                    (node.userData.global_id===ctx.guid)
+                      ? <mesh
+                          geometry={node.geometry}
+                          material-color={"yellow"}
+                          name={node.userData.global_id}
+                          onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id, e.point)))}
                         >
-                            <div className="detail-window">
-                                <DetailInfo modelId = {props.modelId} guid = {node.userData.global_id} />
-                                <Reactstrap.Button className="detail-close" onClick={() => setShowDetail(false)} style={{ userSelect: "none" }}>
-                                Close
-                                </Reactstrap.Button>
-                            </div>
-                        </Html>}
-                </mesh>
-              )
-            } else {
-              let material: Material | Material[] = []
-              if (Array.isArray(node.material)) {
-                material = node.material.map((mat: Material) => {
+                          {(node.userData.global_id===ctx.guid && showDetail) &&
+                            <Html
+                                position={clickPoint}
+                            >
+                                <div className="detail-window">
+                                    <DetailInfo modelId = {props.modelId} guid = {node.userData.global_id} />
+                                    <Reactstrap.Button className="detail-close" onClick={() => setShowDetail(false)} style={{ userSelect: "none" }}>
+                                    Close
+                                    </Reactstrap.Button>
+                                </div>
+                            </Html>}
+                        </mesh>
+                      : <mesh
+                          geometry={node.geometry}
+                          material={node.material}
+                          name={node.userData.global_id}
+                          onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id, e.point)))}
+                        />
+                  )
+              })}
+            </>)
+            : (<> 
+              {Object.values(props.nodes).map((node: Mesh) => {
+                if (node.type !== 'Mesh') return (<></>)
+                let material: Material | Material[] = []
+                if (Array.isArray(node.material)) {
+                  material = node.material.map((mat: Material) => {
+                    mat.clippingPlanes = clipPlanes
+                    return mat
+                  })
+                } else {
+                  const mat = node.material
                   mat.clippingPlanes = clipPlanes
-                  return mat
-                })
-              } else {
-                const mat = node.material
-                mat.clippingPlanes = clipPlanes
-                material = mat
-              }
-              return (
-                <mesh
-                        geometry={node.geometry}
-                        material={material}
-                        name={node.userData.global_id}
-                        onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id, e.point)))}
-                    ></mesh>
-              )
-            }
-          } else {
-            return (<></>)
-          }
-        })
+                  material = mat
+                }
+                const boudingBoxEdge = props.boudingBoxes.get(node.userData.global_id)?.min?.z
+                return (
+                  <>
+                  {((typeof boudingBoxEdge !== 'undefined' && boudingBoxEdge <= clipHeight) && (props.selectedClasses).includes(node.userData.class_name))
+                  && <mesh
+                    geometry={node.geometry}
+                    material={material}
+                    name={node.userData.global_id}
+                  ></mesh>}
+                  </>
+                )
+                })}
+            </>)
         }
         </>
     )
