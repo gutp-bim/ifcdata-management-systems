@@ -15,7 +15,7 @@ import { useGetGlbModels } from 'apiServices/getGlbModels';
 import { ModelViewPageProps } from "main/routes";
 
 import { AssertionError } from "assert";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, OrthographicCamera } from "@react-three/drei";
 import { Canvas } from '@react-three/fiber';
 import { EffectComposer, SSAO } from '@react-three/postprocessing';
 import { BlendFunction } from "postprocessing";
@@ -47,6 +47,7 @@ const View = () => {
   const classNames = Array.from(new Set(Object.values(nodes).map((node: Mesh) => node.userData.class_name))).filter(el => typeof el !== "undefined")
   const [selectedClasses, setSelectedClasses] = useState(classNames)
   const [effectMode, setEffectMode] = useState("no-effect")
+  const [cameraMode, setCameraMode] = useState("perspective")
   const [clippingMode, setClippingMode] = useState<ClippingMode>(ClippingMode.noClip())
   const [planePosition, setPlanePosition] = useState<number>(1.5)
   const ctx = useGuidContext();
@@ -114,11 +115,17 @@ const View = () => {
             </select>
           </div>
                   */}
-          <div>
+          {/*<div>
             <select name="clipping" onChange={(e) => setClippingMode(ClippingMode.fromString(e.target.value))} value={clippingMode.toString()}>
               {clippingModeOptions.map((op, idx) => (
                 <option key={idx} value={op.value}>{op.label}</option>
               ))}
+            </select>
+              </div>*/}
+          <div>
+            <select name="camera" onChange={(e) => setCameraMode(e.target.value)} value={cameraMode}>
+              <option value="perspective">パースペクティブカメラ</option>
+              <option value="ortho">オルソカメラ</option>
             </select>
           </div>
           <div style={{ width: `${window.innerWidth}`, height: `${window.innerHeight}px`}}>
@@ -127,6 +134,8 @@ const View = () => {
               frameloop="demand"
               camera={{position: [-3, 10, 50]}}
               >
+                <PerspectiveCamera position={[-3, 10, 50]} makeDefault={cameraMode==="perspective"} />
+                <OrthographicCamera position={[-3, 10, 50]} makeDefault={cameraMode==="ortho"} />
               <Suspense fallback={null}>
                 <Bounds fit clip margin={1.2} fixedOrientation>
                   <GlbModels nodes={nodes} selectedClasses={selectedClasses} boudingBoxes={boudingBoxes} clippingMode={clippingMode} planePosition={planePosition} modelId={modelId}/>
