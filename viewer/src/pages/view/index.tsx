@@ -135,8 +135,12 @@ const View = () => {
               </Suspense>
               <Plane clippingMode={clippingMode} planePosition={planePosition} setPlanePosition={setPlanePosition} boudingBoxes={boudingBoxes} />
               <OrbitControls makeDefault />
-              <ambientLight />
-              <pointLight position={[10, 10, 10]} />
+              <directionalLight position={[100, 0, 0]} />
+              <directionalLight position={[-100, 0, 0]} />
+              <directionalLight position={[0, 100, 0]} />
+              <directionalLight position={[0, -100, 0]} />
+              <directionalLight position={[0, 0, 100]} />
+              <directionalLight position={[0, 0, -100]} />
               {
                 effectMode === "sao"
                 && (              
