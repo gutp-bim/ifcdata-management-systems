@@ -107,63 +107,63 @@ const View = () => {
           minSize={[10, 100]}
           direction="vertical"
         >
-          {/*
-          <div>
-            <select name="effect" onChange={(e) => setEffectMode(e.target.value)} value={effectMode}>
-              <option value="no-effect">SAOなし</option>
-              <option value="sao">SAOあり</option>
-            </select>
-          </div>
-                  */}
-          {/*<div>
-            <select name="clipping" onChange={(e) => setClippingMode(ClippingMode.fromString(e.target.value))} value={clippingMode.toString()}>
-              {clippingModeOptions.map((op, idx) => (
-                <option key={idx} value={op.value}>{op.label}</option>
-              ))}
-            </select>
-              </div>*/}
-          <div>
-            <select name="camera" onChange={(e) => setCameraMode(e.target.value)} value={cameraMode}>
-              <option value="perspective">パースペクティブカメラ</option>
-              <option value="ortho">オルソカメラ</option>
-            </select>
-          </div>
-          <div style={{ width: `${window.innerWidth}`, height: `${window.innerHeight}px`}}>
-            <Canvas
-              gl={{ localClippingEnabled: true }}
-              frameloop="demand"
-              camera={{position: [-3, 10, 50]}}
-              >
-                <PerspectiveCamera position={[-3, 10, 50]} makeDefault={cameraMode==="perspective"} />
-                <OrthographicCamera position={[-3, 10, 50]} makeDefault={cameraMode==="ortho"} />
-              <Suspense fallback={null}>
-                <Bounds fit clip margin={1.2} fixedOrientation>
-                  <GlbModels nodes={nodes} selectedClasses={selectedClasses} boudingBoxes={boudingBoxes} clippingMode={clippingMode} planePosition={planePosition} modelId={modelId}/>
-                  <SelectToZoom />
-                </Bounds>
-              </Suspense>
-              <Plane clippingMode={clippingMode} planePosition={planePosition} setPlanePosition={setPlanePosition} boudingBoxes={boudingBoxes} />
-              <OrbitControls makeDefault />
-              <directionalLight position={[100, 0, 0]} />
-              <directionalLight position={[-100, 0, 0]} />
-              <directionalLight position={[0, 100, 0]} />
-              <directionalLight position={[0, -100, 0]} />
-              <directionalLight position={[0, 0, 100]} />
-              <directionalLight position={[0, 0, -100]} />
-              {
-                effectMode === "sao"
-                && (              
-                <EffectComposer>
-                  <SSAO 
-                    blendFunction={BlendFunction.MULTIPLY}
-                    samples={31}
-                    radius={5}
-                    intensity={30}
-                  />
-                </EffectComposer>)
-              }
+          <div style={{position: "relative"}}>
+            <div style={{ width: `${window.innerWidth}`, height: `${window.innerHeight}px`}}>
+              <Canvas
+                gl={{ localClippingEnabled: true }}
+                frameloop="demand"
+                camera={{position: [-3, 10, 50]}}
+                >
+                  <PerspectiveCamera position={[-3, 10, 50]} makeDefault={cameraMode==="perspective"} />
+                  <OrthographicCamera position={[-3, 10, 50]} makeDefault={cameraMode==="ortho"} />
+                <Suspense fallback={null}>
+                  <Bounds fit clip margin={1.2} fixedOrientation>
+                    <GlbModels nodes={nodes} selectedClasses={selectedClasses} boudingBoxes={boudingBoxes} clippingMode={clippingMode} planePosition={planePosition} modelId={modelId}/>
+                    <SelectToZoom />
+                  </Bounds>
+                </Suspense>
+                <Plane clippingMode={clippingMode} planePosition={planePosition} setPlanePosition={setPlanePosition} boudingBoxes={boudingBoxes} />
+                <OrbitControls makeDefault />
+                <directionalLight position={[100, 0, 0]} />
+                <directionalLight position={[-100, 0, 0]} />
+                <directionalLight position={[0, 100, 0]} />
+                <directionalLight position={[0, -100, 0]} />
+                <directionalLight position={[0, 0, 100]} />
+                <directionalLight position={[0, 0, -100]} />
+                {
+                  effectMode === "sao"
+                  && (              
+                  <EffectComposer>
+                    <SSAO 
+                      blendFunction={BlendFunction.MULTIPLY}
+                      samples={31}
+                      radius={5}
+                      intensity={30}
+                    />
+                  </EffectComposer>)
+                }
 
-            </Canvas>
+              </Canvas>
+            </div>
+            <div style={{position: "absolute", top: 0, left: 0, userSelect: "none"}}>
+              <select name="effect" onChange={(e) => setEffectMode(e.target.value)} value={effectMode}>
+                <option value="no-effect">SAOなし</option>
+                <option value="sao">SAOあり</option>
+              </select>
+            </div>
+            <div style={{position: "absolute", top: 0, left: 100, userSelect: "none"}}>
+              <select name="clipping" onChange={(e) => setClippingMode(ClippingMode.fromString(e.target.value))} value={clippingMode.toString()}>
+                {clippingModeOptions.map((op, idx) => (
+                  <option key={idx} value={op.value}>{op.label}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{position: "absolute", top: 0, left: 250, userSelect: "none"}}>
+              <select name="camera" onChange={(e) => setCameraMode(e.target.value)} value={cameraMode}>
+                <option value="perspective">パースペクティブカメラ</option>
+                <option value="ortho">オルソカメラ</option>
+              </select>
+            </div>
           </div>
         </Split>
       </Split>
