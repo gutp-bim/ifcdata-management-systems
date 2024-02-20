@@ -6,7 +6,7 @@ import { ClippingMode } from './ClippingMode';
 import { useGetInstanceDetail } from 'apiServices/getInstanceDetail';
 
 import { Html } from "@react-three/drei";
-import { BufferGeometry, Mesh, Vector3, Plane, Material, Box3 } from 'three'
+import { Mesh, Vector3, Plane, Material, Box3 } from 'three'
 
 const GlbModels: React.FC<{
     nodes: Object
