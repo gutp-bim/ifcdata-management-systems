@@ -1,59 +1,179 @@
-import React, { useContext } from 'react'
+import React, { useContext, useMemo, useState } from 'react'
+import * as Reactstrap from "reactstrap"
 
-import { guidContext } from './contexts' 
+import { guidContext } from './contexts'
+import { ClippingMode } from './ClippingMode';
+import { useGetInstanceDetail } from 'apiServices/getInstanceDetail';
 
-import { useGLTF } from '@react-three/drei'
-import { Mesh, MeshStandardMaterial } from 'three'
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-
-type GLTFResult = GLTF & {
-    nodes: Object
-    materials: {
-        '': THREE.MeshStandardMaterial
-    }
-}
+import { Html } from "@react-three/drei";
+import { Mesh, Vector3, Plane, Material, Box3 } from 'three'
 
 const GlbModels: React.FC<{
-    modelId: string,
-    lod: string | undefined
+    nodes: Object
+    selectedClasses: string[],
+    boudingBoxes: Map<string, Box3 | null>,
+    clippingMode: ClippingMode,
+    planePosition: number,
+    modelId: string
    }> = (props) => {
-    console.log(props.modelId)
     const ctx = useContext(guidContext)
-    const url = (typeof props.lod === "undefined" || props.lod === "3")
-        ? `http://localhost:8000/v1/ifcgeometry/${props.modelId}-3.glb`
-        : `http://localhost:8000/v1/ifcgeometry/${props.modelId}-${props.lod}.glb`
-    const { nodes } = useGLTF(url) as GLTFResult
-    const handleClick = (guid: string) => {
-        console.log(guid)
-        //setShowDetail(false)
+    const [clickPoint, setClickPoint] = useState<Vector3>();
+    const [showDetail, setShowDetail] = useState<boolean>(false);
+
+    const handleClick = (guid: string, point: Vector3) => {
+        setShowDetail(false)
         ctx.setNewGuid(guid)
-        //setClickPoint(e.point)
-        //setShowDetail(true)
+        setClickPoint(point)
+        setShowDetail(true)
       }
+    const clippingMode = props.clippingMode
+    const clipPosition = props.planePosition
+    const clipPlanes = useMemo(() => {
+      if (clippingMode.enableClip) {
+        switch (true) {
+          case clippingMode.axis==='x' && clippingMode.direction==='positive': return [new Plane(new Vector3(-1,0,0), clipPosition)]
+          case clippingMode.axis==='x' && clippingMode.direction==='negative': return [new Plane(new Vector3(1,0,0), -clipPosition)]
+          case clippingMode.axis==='y' && clippingMode.direction==='positive': return [new Plane(new Vector3(0,-1,0), clipPosition)]
+          case clippingMode.axis==='y' && clippingMode.direction==='negative': return [new Plane(new Vector3(0,1,0), -clipPosition)]
+          case clippingMode.axis==='z' && clippingMode.direction==='positive': return [new Plane(new Vector3(0,0,-1), clipPosition)]
+          case clippingMode.axis==='z' && clippingMode.direction==='negative': return [new Plane(new Vector3(0,0,1), -clipPosition)]
+        }
+      } else return []
+    }, [clippingMode, clipPosition])
+
     return (
         <>
-        {Object.values(nodes).map((node: Mesh) => 
-            node.userData.global_id===ctx.guid
-            ? <mesh
+        {
+          clippingMode.enableClip===false
+            ? (<> 
+              {Object.values(props.nodes).map((node: Mesh) => {
+                if (node.type !== 'Mesh') return (<></>)
+                let material: Material | Material[] = []
+                if (Array.isArray(node.material)) {
+                  material = node.material.map((mat: Material) => {
+                    mat.clippingPlanes = []
+                    return mat
+                  })
+                } else {
+                  const mat = node.material
+                  mat.clippingPlanes = []
+                  material = mat
+                }
+                return ((props.selectedClasses).includes(node.userData.class_name))
+                  && (
+                    (node.userData.global_id===ctx.guid)
+                      ? <mesh
+                          geometry={node.geometry}
+                          material-color={"yellow"}
+                          name={node.userData.global_id}
+                          onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id, e.point)))}
+                        >
+                          {(node.userData.global_id===ctx.guid && showDetail) &&
+                            <Html
+                                position={clickPoint}
+                            >
+                                <div className="detail-window">
+                                    <DetailInfo modelId = {props.modelId} guid = {node.userData.global_id} />
+                                    <Reactstrap.Button className="detail-close" onClick={() => setShowDetail(false)} style={{ userSelect: "none" }}>
+                                    Close
+                                    </Reactstrap.Button>
+                                </div>
+                            </Html>}
+                        </mesh>
+                      : <mesh
+                          geometry={node.geometry}
+                          material={node.material}
+                          name={node.userData.global_id}
+                          onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id, e.point)))}
+                        />
+                  )
+              })}
+            </>)
+            : (<> 
+              {Object.values(props.nodes).map((node: Mesh) => {
+                if (node.type !== 'Mesh') return (<></>)
+                let material: Material | Material[] = []
+                if (Array.isArray(node.material)) {
+                  material = node.material.map((mat: Material) => {
+                    mat.clippingPlanes = clipPlanes
+                    return mat
+                  })
+                } else {
+                  const mat = node.material
+                  mat.clippingPlanes = clipPlanes
+                  material = mat
+                }
+                const boudingBoxEdge = props.boudingBoxes.get(node.userData.global_id)?.min?.z
+                return (
+                  <>
+                  {(isInRenderArea(props.boudingBoxes, node.userData.global_id, clipPosition, clippingMode) && (props.selectedClasses).includes(node.userData.class_name))
+                  && <mesh
                     geometry={node.geometry}
-                    material-color={"yellow"}
+                    material={material}
                     name={node.userData.global_id}
-                    onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id)))}
-                />
-            : <mesh
-                    geometry={node.geometry}
-                    material={node.material}
-                    name={node.userData.global_id}
-                    onDoubleClick={(e) => (e.stopPropagation(), (handleClick(node.userData.global_id)))}
-                />             
-        )}
+                  ></mesh>}
+                  </>
+                )
+                })}
+            </>)
+        }
         </>
     )
 }
 
-// yellowじゃなくてblackになる理由を探す
-// API経由でuseGLTFやる方法探す
-// →glb対応完了
-// clickFocus
+const DetailInfo: React.FC<{
+    modelId: string,
+    guid: string
+}> = (props) => {
+    const detail = useGetInstanceDetail(props.modelId, props.guid)
+    switch (detail.status) {
+      case 'loading':
+        return (<div className="detail-body-load">Loading...</div>)
+      case 'failure':
+        return (<div className="detail-body">Data Not Available</div>)
+      case 'success':
+        return (
+          <div className="detail-body">
+            {
+              [...detail.info.entries()].map(([k, v]) => {
+                return (<div>{k}: {v}</div>)
+              })
+            }
+          </div>
+        )
+    }
+}
+
+const isInRenderArea = (
+  boudingBoxes: Map<string, Box3 | null>,
+  guid: string,
+  clipPosition: number,
+  clippingMode: ClippingMode
+) => {
+  let boudingBoxEdge: number | undefined
+  if (clippingMode.enableClip) {
+    switch (true) {
+      case clippingMode.axis==='x' && clippingMode.direction==='positive':
+        boudingBoxEdge = boudingBoxes.get(guid)?.min?.x
+        return typeof boudingBoxEdge !== 'undefined' && boudingBoxEdge <= clipPosition
+      case clippingMode.axis==='x' && clippingMode.direction==='negative':
+        boudingBoxEdge = boudingBoxes.get(guid)?.max?.x
+        return typeof boudingBoxEdge !== 'undefined' && clipPosition <= boudingBoxEdge
+      case clippingMode.axis==='y' && clippingMode.direction==='positive':
+        boudingBoxEdge = boudingBoxes.get(guid)?.min?.y
+        return typeof boudingBoxEdge !== 'undefined' && boudingBoxEdge <= clipPosition
+      case clippingMode.axis==='y' && clippingMode.direction==='negative':
+        boudingBoxEdge = boudingBoxes.get(guid)?.max?.y
+        return typeof boudingBoxEdge !== 'undefined' && clipPosition <= boudingBoxEdge
+      case clippingMode.axis==='z' && clippingMode.direction==='positive':
+        boudingBoxEdge = boudingBoxes.get(guid)?.min?.z
+        return typeof boudingBoxEdge !== 'undefined' && boudingBoxEdge <= clipPosition
+      case clippingMode.axis==='z' && clippingMode.direction==='negative':
+        boudingBoxEdge = boudingBoxes.get(guid)?.max?.z
+        return typeof boudingBoxEdge !== 'undefined' && clipPosition <= boudingBoxEdge
+      default: return false
+    }
+  } else return false
+}
 
 export default GlbModels

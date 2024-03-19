@@ -29,7 +29,7 @@ const View = () => {
         </Reactstrap.CardHeader>
         <Reactstrap.CardBody>
           <div>
-            <select name="effect" onChange={(e) => setLod(e.target.value)} value={lod}>
+            <select name="model-selection" onChange={(e) => setLod(e.target.value)} value={lod}>
               <option value="3">3Dモデル圧縮なし</option>
               <option value="2">3Dモデル圧縮率低 - ボクセルサイズ0.01</option>
               <option value="1">3Dモデル圧縮率高 - ボクセルサイズ0.05</option>

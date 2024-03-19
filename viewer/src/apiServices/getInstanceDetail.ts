@@ -14,7 +14,7 @@ type AttributeValue = {
 export const useGetInstanceDetail: ((modelId: string, guid: string) => ElementDetailResponse) = (modelId: string, guid: string) => {
     const [posts, setPosts] = useState<ElementDetailResponse>(ElementDetailResponse.loading());
     useEffect(() => {
-        fetch(`http://localhost:8080/v1/ifcinstance/24b67d6bc0234761a4cee495969fb191/${guid}`, {method: 'GET'})
+        fetch(`http://localhost:8080/v1/ifcinstance/${modelId}/${guid}`, {method: 'GET'})
         .then(res => res.json())
         .then(async data => {
             const infoWithoutRef = await Promise.all(data['attribute_values'].map(async (e: AttributeValue) => {
@@ -37,7 +37,7 @@ export const useGetInstanceDetail: ((modelId: string, guid: string) => ElementDe
 };
 
 const getSingleName = (modelId: string, guid: string) => {
-    const result = fetch(`http://localhost:8080/v1/ifcinstance/24b67d6bc0234761a4cee495969fb191/${guid}`, {method: 'GET'})
+    const result = fetch(`http://localhost:8080/v1/ifcinstance/${modelId}/${guid}`, {method: 'GET'})
         .then(res => {
             if (!res.ok) {
                 throw new Error(res.statusText)
